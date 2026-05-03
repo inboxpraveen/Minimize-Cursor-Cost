@@ -1,0 +1,33 @@
+---
+description: Rules for test files — keep tests lean and pattern-matched
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.py", "**/*.spec.ts", "**/*.spec.js", "**/test_*.py"]
+alwaysApply: false
+---
+
+# Test File Rules
+
+## Output discipline
+- Write the minimum test that proves the behavior
+- No "describe the purpose" comments — test names are the documentation
+- Don't repeat the implementation logic inside the test
+
+## Test naming
+- Match the naming style already in the file
+- Prefer: `it("returns X when Y")` over `it("test case 1")`
+- Don't rename existing tests
+
+## Mocks
+- Reuse existing mock factories/fixtures — don't create new ones unless missing
+- Inline small mock data; reference fixtures for large data
+- Show only the mock lines that changed
+
+## When adding tests
+- Add to the existing `describe` block if one exists — don't create a new one
+- Follow the existing Arrange/Act/Assert structure (or Given/When/Then)
+- One assertion focus per test — don't bundle unrelated assertions
+
+## Never
+- Don't add snapshot tests unless asked
+- Don't test private methods unless asked
+- Don't add setup/teardown unless required for the new test
+- Don't regenerate passing tests while adding new ones

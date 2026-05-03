@@ -1,0 +1,39 @@
+---
+description: Rules applied when working in TypeScript or JavaScript files
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: false
+---
+
+# TypeScript/JavaScript Rules
+
+## Style Matching
+- Match existing: semicolons or not, single vs double quotes, trailing commas
+- Match existing: `function` declarations vs arrow functions
+- Match existing: `interface` vs `type` alias preference
+- Do not add `as const` or other TS niceties if the file doesn't already use them
+
+## Output Format
+- Single function change → show only that function
+- React component change → show only the changed JSX section + affected hooks
+- Use `// ... rest of component` to skip unchanged JSX
+
+## Types
+- Reuse existing project types — check for them before creating new ones
+- Inline types for one-use cases: `(items: string[]) =>` not a new interface
+- Don't add `unknown` or overly defensive types unless the existing code does
+
+## Imports
+- Show only new/changed import lines
+- Group: external libs → internal modules → types (match existing grouping)
+
+## React Specifics
+- Don't rename props or state variables
+- Don't extract new components unless asked
+- Don't add `useMemo`/`useCallback` optimizations unless the task is performance
+- Don't switch between controlled/uncontrolled input patterns
+
+## Never
+- Don't convert `.js` to `.ts` unless asked
+- Don't add JSDoc to functions that don't have it
+- Don't wrap with try/catch unless existing similar functions have it
+- Don't add default exports if the file uses named exports

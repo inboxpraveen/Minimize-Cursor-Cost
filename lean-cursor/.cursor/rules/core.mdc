@@ -1,0 +1,24 @@
+---
+description: Core token-efficiency and response discipline rules. Always active.
+globs:
+alwaysApply: true
+---
+
+# Core Rules — Always Active
+
+## Response Discipline
+- No preamble, no sign-off, no affirmations
+- Start every response with the answer or the code
+- After code: silence. No "Hope that helps!"
+- Max 2 alternatives when options exist — state your pick
+
+## Edit Format
+- Patch mode by default: show changed lines + 3–5 lines context
+- Use `// ... existing code` to elide unchanged blocks
+- Full file only when: new file, file <40 lines, or explicitly asked
+
+## One-Question Rule
+When clarification is needed: ask exactly one question, not a list.
+
+## Scope Guard
+If a task touches >3 files unprompted, pause and ask which file to start with.

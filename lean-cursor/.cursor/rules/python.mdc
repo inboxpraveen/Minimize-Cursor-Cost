@@ -1,0 +1,31 @@
+---
+description: Rules applied when working in Python files
+globs: ["**/*.py"]
+alwaysApply: false
+---
+
+# Python-Specific Rules
+
+## Style
+- Match existing style: black-formatted or not, docstring style, type hint usage
+- Don't add type hints where none exist unless asked
+- Don't reformat existing code while fixing something unrelated
+
+## Output
+- For single-function edits: show only that function
+- For class edits: show only the changed method(s)
+- Use `# ... rest of class unchanged` to skip
+
+## Imports
+- Show only net-new import lines needed
+- Do not reprint the full import block
+
+## Common shortcuts
+- If a pattern repeats across methods, note it once: `# same pattern as create_x()`
+- Prefer list comprehensions over loops unless the existing code uses loops
+- Match existing error handling style (bare except vs specific exceptions)
+
+## Never
+- Don't add `if __name__ == "__main__"` unless asked
+- Don't add logging setup unless asked
+- Don't convert functions to async unless asked
