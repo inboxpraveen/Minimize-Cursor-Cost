@@ -26,7 +26,7 @@ lean-cursor/
 
 ```bash
 # In your project root
-git clone https://github.com/YOUR_USERNAME/lean-cursor.git lean-cursor-tmp
+git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
 cp lean-cursor-tmp/CLAUDE.md .
 cp lean-cursor-tmp/.cursorrules .
 cp -r lean-cursor-tmp/.cursor .
