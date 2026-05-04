@@ -1,0 +1,42 @@
+---
+description: Rules applied when working in C# / .NET files
+globs: ["**/*.cs", "**/*.csproj", "**/*.sln"]
+alwaysApply: false
+---
+
+# C# / .NET Rules
+
+## Style
+- Match existing style: file-scoped namespaces vs block, `var` vs explicit types.
+- Match existing nullable-reference convention (`#nullable enable` or not).
+- Match existing async naming (`Async` suffix).
+- Don't reformat unrelated lines.
+
+## Output
+- Single method change → show only the method.
+- Class change → show only the changed members. Use `// ... rest of class unchanged`.
+- Don't reprint `using` directives unless adding new ones.
+
+## Async
+- Don't convert sync methods to async unless asked.
+- Match existing `ConfigureAwait(false)` usage exactly.
+- Don't introduce `Task.Run` to make sync code "look async".
+
+## LINQ vs Loops
+- Match existing style. Don't rewrite a `foreach` as LINQ unless asked.
+- Don't add `.ToList()` unless required for materialization.
+
+## DI / Patterns
+- Don't add new abstractions (interfaces, factories) unless the codebase uses them.
+- Don't change DI container registrations as a side-effect of a feature.
+
+## ASP.NET / EF
+- Match existing API style: minimal APIs vs controllers.
+- Match existing EF tracking style; don't add `.AsNoTracking()` unless the existing code does.
+- Don't change connection strings or `appsettings.json` schema unless asked.
+
+## Never
+- Don't add `partial class` declarations unless asked.
+- Don't introduce `dynamic` types.
+- Don't add `record` types to a non-record codebase.
+- Don't change `internal` ↔ `public` visibility unless asked.

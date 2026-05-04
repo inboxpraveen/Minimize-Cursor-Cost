@@ -1,0 +1,49 @@
+---
+description: Rules for React component files (any framework)
+globs: ["**/*.tsx", "**/*.jsx"]
+alwaysApply: false
+---
+
+# React Rules
+
+## Output Format
+- Single component change → show only the changed JSX section + affected hooks.
+- Use `// ... rest of component` to skip unchanged JSX.
+- Don't reprint the import block unless adding new imports.
+
+## Components
+- Don't extract a new component unless asked or unless the same JSX repeats 3+ times.
+- Don't switch a function component to a class component (or vice versa).
+- Don't rename props, state variables, or event handlers.
+
+## Hooks
+- Don't add `useMemo` / `useCallback` unless the task is performance.
+- Don't introduce `useReducer` if `useState` is already in use.
+- Don't add `useEffect` to "be safe" — only when a side-effect is required.
+- Don't change the dependency array of an existing `useEffect` unless the bug is in there.
+
+## State
+- Match existing state library: Redux / Zustand / Jotai / Context. Never introduce a second.
+- Don't lift state without asking.
+- Don't add a new context provider unless the data is genuinely tree-wide.
+
+## Data Fetching
+- Match existing pattern: `fetch` / `axios` / TanStack Query / SWR / RTK Query.
+- Don't introduce a query library if the codebase uses raw `fetch`.
+- Don't add loading/error states beyond what siblings have.
+
+## Styling
+- Match existing system: CSS Modules / Tailwind / styled-components / Emotion / vanilla CSS.
+- Don't switch styling systems within a file.
+- Don't add `className` props for styles that don't exist yet.
+
+## Forms
+- Match existing form library: React Hook Form / Formik / native. Don't switch.
+- Don't add validation libraries (zod, yup) if the project doesn't use one.
+
+## Never
+- Don't add `key` props on non-list elements.
+- Don't add `React.memo` speculatively.
+- Don't add `forwardRef` unless a parent actually passes a ref.
+- Don't add inline `onClick={() => handler(arg)}` if there's an existing pattern using `useCallback`.
+- Don't add new ESLint disable comments — fix the underlying issue.

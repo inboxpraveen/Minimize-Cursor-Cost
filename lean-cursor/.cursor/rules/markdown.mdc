@@ -1,0 +1,38 @@
+---
+description: Rules for Markdown / docs files. Keep prose minimal, prevent doc bloat.
+globs: ["**/*.md", "**/*.mdx"]
+alwaysApply: false
+---
+
+# Markdown / Docs Rules
+
+## Output discipline
+- Show only the changed sections — use `<!-- ... -->` to elide unchanged ones if helpful.
+- Don't reprint the table of contents unless it changed.
+- Don't reformat existing prose while editing one section.
+
+## Style matching
+- Match existing heading depth and style (`#` vs `##` for top-level).
+- Match existing list style (`-` vs `*`, ordered vs unordered).
+- Match existing code-block fencing and language tags.
+
+## When writing new docs
+- Lead with the action, not the rationale.
+- Use tables for comparisons, not paragraphs.
+- Use code blocks for commands, not inline `like this` for multi-line content.
+- Keep examples minimal — one is usually enough.
+
+## What not to add
+- Don't add "Introduction" sections for a single-page README that already starts with the title.
+- Don't add "Conclusion" or "Summary" sections — the reader has the full doc.
+- Don't add boilerplate sections (Prerequisites, Notes) unless content exists for them.
+- Don't add badges, emojis, or "powered by" footers unless asked.
+
+## Links & references
+- Use relative links for in-repo references.
+- Don't break existing anchor links by renaming headings — flag instead.
+
+## Never
+- Don't auto-generate a doc from code without being asked.
+- Don't add a CONTRIBUTING / CHANGELOG / CODE_OF_CONDUCT section to a README.
+- Don't translate docs — that's a separate task.

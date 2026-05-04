@@ -1,0 +1,38 @@
+---
+description: Rules applied when working in Rust files
+globs: ["**/*.rs"]
+alwaysApply: false
+---
+
+# Rust-Specific Rules
+
+## Style
+- Match existing style: rustfmt is assumed.
+- Match existing error pattern: `anyhow::Result` vs `thiserror` vs custom `Error` enum. Don't mix.
+- Don't add `#[derive(...)]` traits beyond what siblings use.
+- Don't add lifetimes where elision works.
+
+## Output
+- Single function or impl block → show only that block.
+- Method on a struct → show only the method.
+- Use `// ... rest of impl unchanged` to skip.
+
+## Ownership & Borrowing
+- Prefer borrowing over cloning unless cloning is already the convention nearby.
+- Don't introduce `Arc`/`Mutex`/`RwLock` unless asked or required for correctness.
+- Don't change function signatures from `&str` ↔ `String` unless the bug requires it.
+
+## Errors
+- Use `?` propagation matching existing style.
+- Don't introduce `unwrap()` in library code; use `expect("…why this is safe…")` if forced.
+- Match existing `Result<T, E>` type — don't switch error types mid-module.
+
+## Async
+- Don't add `async`/`await` unless the surrounding code is already async.
+- Match the existing runtime (tokio vs async-std) — never mix.
+
+## Never
+- Don't add `unsafe` blocks unless explicitly asked.
+- Don't add `#[allow(...)]` to silence warnings — fix the warning or leave it.
+- Don't restructure modules (`mod`/`pub use`) while fixing something unrelated.
+- Don't add doc comments (`///`) to private items unless the file already does.

@@ -1,0 +1,41 @@
+---
+description: Rules for Vue (2 and 3) single-file components
+globs: ["**/*.vue"]
+alwaysApply: false
+---
+
+# Vue Rules
+
+## Detect the version & API style
+- Vue 3 Composition API (`<script setup>`), Vue 3 Options API, or Vue 2 Options API.
+- Don't mix APIs in the same component.
+- Don't migrate Options → Composition (or vice versa) unless asked.
+
+## Output Format
+- Single change → show only the affected `<template>`, `<script>`, or `<style>` block.
+- Use `<!-- ... rest of template unchanged -->` to skip.
+- Don't reprint imports unless adding new ones.
+
+## Reactivity
+- Match existing pattern: `ref` / `reactive` / `computed` / `watch`. Don't switch.
+- Don't unwrap `.value` everywhere if the codebase uses `toRefs`.
+- Don't add `watchEffect` if a `computed` is sufficient.
+
+## Props & Emits
+- Don't rename props or emit events.
+- Match existing prop-validation style (object form vs array form, with/without TypeScript).
+- Don't add default values to props that don't have them.
+
+## Styling
+- Match existing scoped/unscoped styles. Don't switch.
+- Match preprocessor: SCSS / Less / plain CSS / Tailwind. Don't introduce a new one.
+
+## State Management
+- Match existing store: Pinia / Vuex / provide-inject. Don't switch.
+- Don't add a new store module unless the data is tree-wide.
+
+## Never
+- Don't add `<script setup>` to a component already using Options API.
+- Don't add Composition API helpers (`computed`, `watch`) into Options-API components.
+- Don't change `defineProps` ↔ `props: {...}` styles.
+- Don't add new Vue plugins to `main.ts`/`main.js` while doing a component task.

@@ -1,0 +1,47 @@
+---
+description: Rules applied when working in Java or Kotlin files (incl. Android)
+globs: ["**/*.java", "**/*.kt", "**/*.kts"]
+alwaysApply: false
+---
+
+# Java / Kotlin Rules
+
+## Style
+- Match existing formatter: Google Java Format / ktlint / detekt — don't reformat unrelated lines.
+- Match existing nullability convention: `@Nullable`/`@NonNull` (Java) or platform/nullable types (Kotlin).
+- Match existing access modifier defaults (e.g., `internal` vs `public` in Kotlin modules).
+
+## Output
+- Single method change → show only that method.
+- Class change → show only the changed members. Use `// ... rest of class unchanged`.
+- Don't reprint imports unless adding new ones.
+
+## Imports
+- Show only new imports.
+- No wildcard imports unless the file already uses them.
+
+## Kotlin-Specific
+- Don't convert Java-style code to idiomatic Kotlin unless asked.
+- Don't add `data class` / `sealed class` refactors as a side-effect.
+- Match existing scope-function preference (`let`, `apply`, `also`) — don't add them speculatively.
+- Don't introduce coroutines into a non-coroutine codebase.
+
+## Java-Specific
+- Don't add `var` (Java 10+) unless surrounding code uses it.
+- Don't add `record` types unless the codebase already has them.
+- Don't add `Optional<T>` unless surrounding code uses it.
+
+## Android-Specific (when paths include `android/`, `app/src/`, `*Activity.kt`, etc.)
+- Match existing UI framework: View XML, Jetpack Compose, or both — don't mix in a file.
+- Don't add a new dependency injection framework if Hilt/Koin/manual is in use.
+- Don't add new Gradle plugins without flagging.
+
+## Testing
+- Match existing test framework: JUnit 4 / JUnit 5 / Kotest. Don't switch.
+- Match existing mocking lib: Mockito / MockK. Don't introduce a new one.
+
+## Never
+- Don't change `final` modifiers unless asked.
+- Don't add Lombok annotations to a non-Lombok project.
+- Don't refactor builder patterns unless asked.
+- Don't introduce reactive streams (RxJava/Reactor/Flow) where there are none.

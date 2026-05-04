@@ -1,0 +1,38 @@
+---
+description: Rules applied when working in Go files
+globs: ["**/*.go"]
+alwaysApply: false
+---
+
+# Go-Specific Rules
+
+## Style
+- Match existing style: gofmt is assumed; never reformat unrelated lines.
+- Match existing error-handling pattern: `errors.New` vs `fmt.Errorf` vs `errors.Wrap`. Don't mix.
+- Match existing logger (e.g., `log/slog`, `zap`, `logrus`). Don't introduce a new one.
+- Don't add `// Package X ...` doc comments unless the file already has them.
+
+## Output
+- Single-function edit → show only that function.
+- Method on a struct → show only the method, not the struct definition.
+- Use `// ... rest of file unchanged` to skip.
+
+## Imports
+- Show only the new import lines being added.
+- Group: stdlib, external, internal — matching existing grouping.
+
+## Errors & Returns
+- Always return an error from functions that can fail; do not panic in library code.
+- Match the existing convention for sentinel errors vs typed errors.
+- Don't wrap errors more than once in the same call site.
+
+## Concurrency
+- Don't introduce goroutines or channels unless asked.
+- Don't add `sync.Mutex` to existing code unless the bug is a race.
+- Always pair `go func()` with a way to wait/cancel — never fire-and-forget in library code.
+
+## Never
+- Don't add `init()` unless asked.
+- Don't add interfaces speculatively. Define an interface only at the consumer.
+- Don't change `any` ↔ `interface{}` style unless the file is consistent the other way.
+- Don't add struct tags beyond what the existing code uses.

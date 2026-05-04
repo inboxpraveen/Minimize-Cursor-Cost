@@ -1,0 +1,44 @@
+---
+description: Rules for Svelte / SvelteKit components
+globs: ["**/*.svelte", "**/+page.*", "**/+layout.*", "**/+server.*"]
+alwaysApply: false
+---
+
+# Svelte / SvelteKit Rules
+
+## Detect the version
+- Svelte 4 (stores, `$:` reactive statements) vs Svelte 5 (runes: `$state`, `$derived`, `$effect`).
+- Don't mix runes and pre-runes reactivity in the same component.
+- Don't migrate to runes unless asked.
+
+## Output Format
+- Single change → show only the affected `<script>`, markup, or `<style>` block.
+- Don't reprint imports unless adding new ones.
+
+## Reactivity
+- Svelte 4: match existing `$:` style. Don't replace with `derived` stores unless asked.
+- Svelte 5: match existing rune usage exactly. Don't introduce `$effect` if `$derived` is enough.
+
+## Props & Events
+- Don't rename props or dispatched events.
+- Svelte 5: match `$props()` destructuring style.
+- Svelte 4: match `export let` usage; don't switch to `$$props`/`$$restProps` unless needed.
+
+## SvelteKit-Specific
+- App routes: match existing `+page.svelte` / `+page.server.ts` / `+page.ts` split.
+- Don't move logic from `+page.server.ts` to `+page.ts` (or vice versa) without flagging.
+- Match existing `load` function shape (return shape, await pattern).
+- Don't introduce form actions if the existing page uses an API endpoint.
+
+## Stores
+- Match existing store style: writable/readable/derived stores vs context API vs runes.
+- Don't introduce a new store library.
+
+## Styling
+- Match existing scoped vs `:global()` usage.
+- Don't switch CSS framework (Tailwind / vanilla / preprocessor).
+
+## Never
+- Don't add `<svelte:options accessors />` unless needed.
+- Don't add transitions / animations to satisfy "polish".
+- Don't change adapter (`@sveltejs/adapter-*`) while doing a feature task.

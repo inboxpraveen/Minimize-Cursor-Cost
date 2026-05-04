@@ -1,0 +1,55 @@
+---
+description: Rules for mobile development (Swift/iOS, Kotlin Android, React Native, Flutter)
+globs: ["**/*.swift", "**/*.dart", "**/ios/**", "**/android/**", "**/lib/**/*.dart", "**/App.tsx", "**/screens/**/*.tsx", "**/navigation/**/*.tsx"]
+alwaysApply: false
+---
+
+# Mobile Rules
+
+These apply when working on mobile-specific code. The TS/React rules still
+apply for React Native; this layers on top.
+
+## Universal mobile principles
+- Don't add new native dependencies (CocoaPods, Gradle, Flutter packages) without flagging.
+- Don't change minimum SDK / deployment target without asking.
+- Don't add new permissions to Info.plist / AndroidManifest without flagging.
+- Don't restructure the platform folder layout (`ios/`, `android/`, `lib/`).
+
+## Swift / SwiftUI / UIKit
+- Detect first: SwiftUI vs UIKit. Don't mix paradigms in a screen.
+- Match existing concurrency style: Combine vs async/await vs callbacks. Don't switch.
+- Don't add `@MainActor` / `@Observable` / `@StateObject` speculatively.
+- Don't change `let` ↔ `var` unless required.
+- Match existing dependency injection: protocol-oriented vs framework (Resolver, Swinject).
+
+## Kotlin Android
+- Detect first: Jetpack Compose vs Views (XML). Don't mix in a screen.
+- Match existing architecture: MVVM / MVI / Clean. Don't introduce a new layer.
+- Match existing DI: Hilt / Koin / manual. Don't switch.
+- Don't add coroutine scopes — match existing `viewModelScope` / `lifecycleScope` usage.
+- Don't add new lifecycle observers unless needed.
+
+## React Native
+- Match existing navigation: React Navigation / Expo Router. Don't switch.
+- Don't introduce a new state library — match existing.
+- Match existing styling: StyleSheet / styled-components / NativeWind / Tamagui.
+- Don't add platform-specific code (`Platform.OS` checks) unless the bug requires it.
+- Don't add new native modules unless asked.
+
+## Flutter
+- Match existing state management: Provider / Riverpod / Bloc / GetX / setState. Don't switch.
+- Don't restructure widget trees as a side-effect.
+- Match existing folder structure (feature-first vs layer-first).
+- Don't add `const` constructors retroactively unless asked.
+- Don't change `StatefulWidget` ↔ `StatelessWidget` unless required.
+
+## Output
+- Show the smallest changeable unit: a single function, widget, or composable.
+- Use `// ... rest of class/widget unchanged` to skip.
+- Don't reprint generated files (`.g.dart`, build outputs).
+
+## Never
+- Don't suggest "rebuild the iOS project" or "invalidate caches" as a fix unless it's clearly the cause.
+- Don't change app version / build number while doing a feature task.
+- Don't introduce a new code-signing config.
+- Don't propose switching cross-platform frameworks (RN ↔ Flutter ↔ native) — that's not a fix.

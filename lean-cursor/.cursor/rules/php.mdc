@@ -1,0 +1,48 @@
+---
+description: Rules applied when working in PHP files (incl. Laravel, Symfony, WordPress)
+globs: ["**/*.php"]
+alwaysApply: false
+---
+
+# PHP Rules
+
+## Style
+- Match existing style: PSR-12 / Laravel Pint / PHP-CS-Fixer.
+- Don't reformat unrelated lines.
+- Match existing strict-type declaration: `declare(strict_types=1);` or not — don't toggle.
+
+## Output
+- Single method change → show only that method.
+- Class change → show only the changed members. Use `// ... rest of class unchanged`.
+- Don't reprint `use` statements unless adding new ones.
+
+## Types
+- Match existing parameter/return type usage. Don't add type hints to untyped code unless asked.
+- Don't change `array` type hints to typed objects unless asked.
+
+## Framework-Specific
+
+### Laravel
+- Match existing pattern: Eloquent vs Query Builder vs raw SQL.
+- Don't add facades/helpers beyond what siblings use.
+- Don't change route definitions while editing controllers.
+- Match existing validation style: Form Request vs inline `$request->validate(...)`.
+
+### Symfony
+- Match existing service definition style: autowired vs explicit YAML/PHP config.
+- Don't add new bundles unless asked.
+
+### WordPress
+- Don't add filters/actions beyond what's needed.
+- Match existing escaping style (`esc_html`, `esc_attr`, `wp_kses`).
+- Never echo user input without escaping.
+
+## Tests
+- Match existing framework: PHPUnit / Pest. Don't switch.
+- Don't add Mockery if the codebase uses PHPUnit's built-in mocks (or vice versa).
+
+## Never
+- Don't add `final` to classes that aren't already `final`.
+- Don't change visibility (`private` ↔ `protected` ↔ `public`) unless asked.
+- Don't remove `@throws` / `@param` PHPDoc blocks without asking.
+- Don't suggest upgrading PHP version as a fix.

@@ -1,0 +1,38 @@
+---
+description: Rules applied when working in Ruby files (incl. Rails)
+globs: ["**/*.rb", "**/*.erb", "**/*.rake", "**/Rakefile", "**/Gemfile"]
+alwaysApply: false
+---
+
+# Ruby / Rails Rules
+
+## Style
+- Match existing style: RuboCop / Standard. Don't reformat unrelated lines.
+- Match existing string-quote preference (single vs double).
+- Don't add `# frozen_string_literal: true` unless other files have it.
+
+## Output
+- Method change → show only the method.
+- Class/module change → show only the changed methods. Use `# ... rest of class unchanged`.
+- Don't reprint `require` lines unless adding new ones.
+
+## Rails-Specific
+- Match existing controller pattern: thin controller / service objects / form objects.
+- Don't add `before_action` callbacks beyond what siblings use.
+- Don't add concerns or service objects unless the codebase uses them.
+- Match existing Active Record style (`scope` vs class methods, `where` chaining vs Arel).
+
+## Migrations
+- Never edit a migration that has already been run in production. Create a new one.
+- Match existing migration style (`change` vs `up`/`down`).
+
+## Tests
+- Match existing framework: RSpec vs Minitest. Don't switch.
+- For RSpec: match `describe`/`context`/`it` nesting style already in the file.
+- Don't add `let!` or `before` blocks beyond what's needed for the new test.
+
+## Never
+- Don't monkey-patch core classes.
+- Don't add `attr_accessor` for things that don't need to be public.
+- Don't introduce metaprogramming (`define_method`, `method_missing`) into a codebase that doesn't use it.
+- Don't change Gem versions unless that's the explicit task.

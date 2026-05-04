@@ -1,0 +1,61 @@
+---
+description: Rules for YAML / config / infra files (Docker, K8s, Terraform, GitHub Actions, etc.)
+globs: ["**/*.yaml", "**/*.yml", "**/*.toml", "**/Dockerfile", "**/docker-compose*.yml", "**/*.tf", "**/*.tfvars", "**/.github/workflows/*.yml", "**/k8s/**/*.yaml", "**/helm/**/*.yaml"]
+alwaysApply: false
+---
+
+# YAML / Config / Infra Rules
+
+## Universal
+- Match existing indentation exactly. YAML is whitespace-sensitive — never change indent width.
+- Match existing key ordering; don't sort alphabetically as a side-effect.
+- Match existing quoting (none / single / double).
+- Show only the changed key(s) and the minimum surrounding context to anchor location.
+
+## Output
+- For a single key change, show the parent path + the changed line:
+  ```
+  spec:
+    template:
+      spec:
+        containers:
+          - name: api
+            image: myrepo/api:v1.4.2  # ← changed
+  ```
+- Don't reprint the entire manifest.
+
+## Dockerfile
+- Match existing base image strategy; don't switch from `alpine` to `debian` unless asked.
+- Don't reorder layers — that invalidates caches the user is depending on.
+- Don't combine/split `RUN` instructions unless that's the task.
+- Don't add `HEALTHCHECK` / `USER` / `LABEL` unless siblings have them.
+
+## docker-compose
+- Match existing version key.
+- Don't add new services to a feature task — only what's asked.
+- Don't change exposed ports unless requested.
+
+## Kubernetes / Helm
+- Don't change `apiVersion` unless that's the explicit task.
+- Don't add new resources (HPA, PDB, NetworkPolicy) speculatively.
+- Match existing label/annotation conventions exactly.
+- For Helm: don't move values between `values.yaml` and templates without flagging.
+
+## Terraform
+- Match existing module structure — don't refactor into new modules.
+- Don't change provider versions while doing a feature.
+- Don't add new providers.
+- Match existing variable naming (snake_case is conventional).
+- Show only the changed `resource` / `module` block.
+
+## GitHub Actions / CI
+- Match existing workflow trigger style.
+- Don't add new actions/marketplace dependencies without flagging.
+- Don't pin/unpin action versions as a side-effect.
+- Don't add caching steps to workflows that don't have them — that changes runtime behavior.
+
+## Never
+- Don't add comments to production manifests unless a value is non-obvious.
+- Don't introduce environment variables that need new secrets without flagging.
+- Don't change resource limits/requests as a side-effect.
+- Don't suggest "switch to a different infra tool" as a fix.

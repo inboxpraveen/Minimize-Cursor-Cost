@@ -1,0 +1,48 @@
+---
+description: Rules for data science, ML, and Jupyter notebook work
+globs: ["**/*.ipynb", "**/notebooks/**/*.py", "**/*.parquet", "**/*.csv"]
+alwaysApply: false
+---
+
+# Data Science / Notebook Rules
+
+Notebook outputs are the single biggest hidden token cost in DS work — printed
+DataFrames, plot bytes, and stack traces all flood context.
+
+## Cell output discipline
+- After running a cell that produces large output, suggest clearing it before next prompt: print only `df.shape`, `df.head(3)`, or `df.dtypes`.
+- For plots: confirm visually, then suggest `plt.close()` and remove the inline image from the next prompt.
+- Don't paste tracebacks longer than 30 lines — paste the final exception line and the most recent frame in your code.
+
+## DataFrame work
+- Use `.head(n)` / `.sample(n)` for inspection, never full prints.
+- Don't `print(df)` on a DataFrame larger than 50 rows.
+- Show schema with `df.dtypes` or `df.info()` rather than the data itself.
+- For a transformation: show the chain (`df.groupby(...).agg(...)`) without printing intermediate results.
+
+## Code cell output
+- Edit single cells in place; don't regenerate the whole notebook.
+- Use `# ... cell unchanged` between edits.
+- Don't add markdown cells unless asked.
+
+## Modeling
+- Match existing framework: scikit-learn / PyTorch / TensorFlow / JAX. Don't switch.
+- Don't introduce a new experiment-tracking tool (W&B, MLflow) if not present.
+- Don't add hyperparameter sweeps unless asked.
+- Don't `print(model)` for large models — show only the layer/parameter being changed.
+
+## Reproducibility
+- Set random seeds only if the surrounding code does.
+- Don't add `pip install` cells in the middle of a notebook — flag missing deps for the requirements file.
+
+## Heavy outputs to suppress
+- Full model summaries (`model.summary()` for big networks)
+- Feature importance for thousands of features (show top-20)
+- Confusion matrices wider than 10×10 (show as text counts, not seaborn plot)
+- Tensor pretty-prints (use `.shape` and `.dtype` only)
+
+## Never
+- Don't `display(df)` without a row limit.
+- Don't paste binary outputs (image base64, pickled bytes) into chat.
+- Don't refactor a research notebook into "clean code" unless asked.
+- Don't add unit tests to exploratory notebooks.

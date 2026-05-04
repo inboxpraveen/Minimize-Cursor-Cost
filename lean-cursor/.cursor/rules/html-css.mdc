@@ -1,0 +1,40 @@
+---
+description: Rules for HTML, CSS, and styling files
+globs: ["**/*.html", "**/*.css", "**/*.scss", "**/*.sass", "**/*.less", "**/*.module.css", "**/*.module.scss"]
+alwaysApply: false
+---
+
+# HTML / CSS Rules
+
+## Output
+- Show only the affected element / selector.
+- Don't reprint surrounding markup unless needed for selector context.
+- Don't reformat indentation in unrelated lines.
+
+## CSS
+- Match existing methodology: BEM / utility-first (Tailwind) / CSS Modules / plain.
+- Don't introduce a new methodology mid-file.
+- Don't add CSS custom properties (vars) if the file doesn't use them.
+- Don't add vendor prefixes — assume autoprefixer or modern browsers unless told otherwise.
+
+## Tailwind
+- Match existing class ordering style.
+- Don't introduce arbitrary values (`w-[123px]`) when a scale value works.
+- Don't add `@apply` rules unless the codebase uses them.
+- Don't add new custom theme entries to `tailwind.config.*` unless asked.
+
+## SCSS / Sass
+- Don't add nested selectors deeper than the existing file.
+- Don't introduce mixins for one-off use.
+- Match existing module/import style (`@use` vs `@import`).
+
+## Accessibility
+- Preserve existing ARIA attributes — don't strip them.
+- Don't add ARIA attributes that duplicate semantic HTML (e.g., `role="button"` on `<button>`).
+- Match existing alt-text style (don't suddenly add `alt=""` to all images).
+
+## Never
+- Don't change the design system colors / spacing scale.
+- Don't introduce CSS-in-JS to a CSS-file project (or vice versa).
+- Don't add `!important` to fix specificity — fix the selector.
+- Don't restructure HTML semantics (`<div>` → `<section>`) unless the task is a11y.

@@ -1,0 +1,37 @@
+---
+description: Rules for SQL files (queries, migrations, stored procs)
+globs: ["**/*.sql"]
+alwaysApply: false
+---
+
+# SQL Rules
+
+## Style
+- Match existing case convention: keywords UPPERCASE vs lowercase, identifiers snake_case vs camelCase.
+- Match existing indentation and trailing-comma style.
+- Don't reformat unrelated lines.
+
+## Output
+- For migrations: write only the new migration file's contents. Don't reprint old ones.
+- For query edits: show only the changed clause(s) when possible. If the full query is needed, show it complete (queries don't usefully diff in pieces).
+
+## Migrations
+- **Never edit a migration that has been applied to production.** Add a new migration.
+- Match the existing migration tool's idioms (Alembic, Prisma, Knex, Flyway, Liquibase, raw SQL).
+- Always include a reversible/down step if siblings have one.
+- Don't drop columns/tables in the same migration that adds replacements — split into two.
+
+## Queries
+- Don't add `SELECT *` to existing code that names columns.
+- Don't add new indexes speculatively — call them out as a suggestion instead.
+- Don't change `JOIN` order or types (`INNER` ↔ `LEFT`) unless that's the bug.
+- For aggregations, match existing alias style.
+
+## Performance
+- Don't add `EXPLAIN ANALYZE` output to context — summarize it.
+- Don't suggest denormalization or schema redesign as a side-effect of a query fix.
+
+## Never
+- Don't use vendor-specific features (Postgres `JSONB`, MySQL `ON DUPLICATE KEY`) if the codebase targets multiple DBs.
+- Don't add stored procedures / triggers unless the codebase already uses them.
+- Don't change collation, character set, or timezone settings while doing a feature task.

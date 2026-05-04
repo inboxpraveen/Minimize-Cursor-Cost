@@ -1,0 +1,46 @@
+---
+description: Rules for Next.js projects (App Router and Pages Router)
+globs: ["**/app/**/*.tsx", "**/app/**/*.ts", "**/pages/**/*.tsx", "**/pages/**/*.ts", "**/middleware.ts", "**/next.config.*"]
+alwaysApply: false
+---
+
+# Next.js Rules
+
+## Detect the router first
+- App Router: files under `app/`, uses `page.tsx` / `layout.tsx` / `route.ts`.
+- Pages Router: files under `pages/`, uses default-exported components.
+- Don't mix idioms across routers.
+
+## Server vs Client Components
+- A component is server by default in App Router. Add `"use client"` only when needed (state, effects, browser APIs, event handlers).
+- Don't sprinkle `"use client"` "to be safe" — it disables the biggest perf wins.
+- Don't import server-only modules (e.g., `fs`, `node:*`) into client components.
+
+## Data Fetching
+- App Router: prefer server components + `fetch` with caching. Don't introduce SWR/React Query in server components.
+- Pages Router: match existing pattern (`getServerSideProps` vs `getStaticProps`).
+- Don't change `revalidate`, `cache`, or `dynamic` values without flagging.
+
+## Routing
+- Don't restructure `app/` or `pages/` folders to refactor URLs unless asked.
+- Don't move files between routers.
+- Don't add catch-all or dynamic segments speculatively.
+
+## API / Route Handlers
+- App Router: `route.ts` handlers — match existing return shape (`Response` vs `NextResponse`).
+- Pages Router: `pages/api/*` — match existing handler signature.
+- Don't add middleware unless asked.
+
+## Server Actions
+- Add `"use server"` only when the function actually runs on the server.
+- Don't pass server-action references to non-form props without flagging.
+
+## Images / Fonts / Metadata
+- Use `next/image`, `next/font`, and `metadata`/`generateMetadata` only if siblings already do.
+- Don't switch from `<img>` to `<Image>` as a side-effect.
+
+## Never
+- Don't change `next.config.*` while doing a feature task.
+- Don't change `tsconfig.json` paths or compiler options unless asked.
+- Don't add `experimental` flags to `next.config`.
+- Don't introduce a new auth provider — match existing (NextAuth/Clerk/Supabase/etc.).

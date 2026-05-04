@@ -1,0 +1,37 @@
+---
+description: Rules for shell scripts (bash, zsh, sh, PowerShell)
+globs: ["**/*.sh", "**/*.bash", "**/*.zsh", "**/*.ps1", "**/*.psm1", "**/Makefile"]
+alwaysApply: false
+---
+
+# Shell Script Rules
+
+## Style
+- Match existing shebang and `set -e` / `set -euo pipefail` usage. Don't toggle.
+- Match existing quoting style (always quote vs minimal).
+- Don't reformat unrelated lines.
+
+## Output
+- Show the changed function or block, not the whole script.
+- Don't reprint header/copyright comments.
+
+## Portability
+- Match the existing target shell exactly (bash vs sh vs zsh vs PowerShell).
+- Don't introduce bashisms (`[[ ... ]]`, arrays) into a `/bin/sh` script.
+- Don't introduce GNU-only flags into a script that targets BSD/macOS.
+
+## PowerShell
+- Match existing cmdlet vs alias style (`Get-ChildItem` vs `ls`).
+- Match existing parameter style (positional vs named).
+- Don't add `[CmdletBinding()]` to scripts that don't already use it.
+
+## Errors & Exit Codes
+- Match existing error-handling: `||  exit 1` vs `trap` vs explicit checks.
+- Don't add new `trap` handlers without asking.
+- Always exit with a meaningful code; match the existing convention.
+
+## Never
+- Don't add `sudo` to commands that didn't have it.
+- Don't add new dependencies on tools (`jq`, `yq`, `curl`) without flagging.
+- Don't add color/emoji output to scripts that are silent by design.
+- Don't replace `find` with `fd`, or `grep` with `rg`, in user-facing scripts.
