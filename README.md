@@ -12,6 +12,8 @@ six times in a single chat.
 ![Frameworks: 10+](https://img.shields.io/badge/frameworks-10%2B-brightgreen)
 ![Setup time: 60s](https://img.shields.io/badge/setup-60s-orange)
 
+<img src="./assets/Main-Diagram.png" alt="Logo">
+
 ---
 
 ## TL;DR
