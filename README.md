@@ -174,8 +174,18 @@ Both scripts:
 - Drop `CLAUDE.md`, `.cursorrules`, and `PROMPT_TEMPLATES.md` into your project root.
 - Merge `.cursor/rules/*.mdc` into your project (existing rules are NOT overwritten).
 - Back up any files they would replace (with a `.bak.<timestamp>` suffix).
+- Clone the repo to a system temp dir and **wipe it on exit** — the `assets/`,
+  `LICENSE`, `README.md`, `install.*`, and `CONTRIBUTING.md` files in this repo
+  never land in your project.
 
 ### Option 2 — Manual
+
+The repo's top-level `assets/`, `install.*`, `LICENSE`, `README.md`, and
+`CONTRIBUTING.md` are *not* meant to be installed — only the contents of
+`lean-cursor/` go into your project. The `rm -rf` / `Remove-Item` line at the
+end wipes the temp clone, including the `assets/` folder.
+
+**macOS / Linux / WSL:**
 
 ```bash
 git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
@@ -183,7 +193,18 @@ cp lean-cursor-tmp/lean-cursor/CLAUDE.md           .
 cp lean-cursor-tmp/lean-cursor/.cursorrules        .
 cp lean-cursor-tmp/lean-cursor/PROMPT_TEMPLATES.md .
 cp -r lean-cursor-tmp/lean-cursor/.cursor          .
-rm -rf lean-cursor-tmp
+rm -rf lean-cursor-tmp                             # removes the clone, incl. assets/
+```
+
+**Windows (PowerShell):**
+
+```powershell
+git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
+Copy-Item lean-cursor-tmp\lean-cursor\CLAUDE.md            .
+Copy-Item lean-cursor-tmp\lean-cursor\.cursorrules         .
+Copy-Item lean-cursor-tmp\lean-cursor\PROMPT_TEMPLATES.md  .
+Copy-Item lean-cursor-tmp\lean-cursor\.cursor              . -Recurse
+Remove-Item lean-cursor-tmp -Recurse -Force                # removes the clone, incl. assets\
 ```
 
 ### Option 3 — Pick & choose

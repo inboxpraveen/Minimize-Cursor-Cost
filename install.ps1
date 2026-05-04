@@ -13,6 +13,11 @@ $SrcSubdir = 'lean-cursor'
 $Target    = (Get-Location).Path
 $Tmp       = Join-Path ([System.IO.Path]::GetTempPath()) ("mcc-" + [guid]::NewGuid().ToString('N'))
 
+# The repo is cloned into a system temp dir. Only the lean-cursor/ subtree is
+# copied into your project — top-level repo files (assets/, README.md, LICENSE,
+# install.*, CONTRIBUTING.md) never touch your project. The temp clone, including
+# the assets/ folder, is wiped by the finally{} block on script exit.
+
 Write-Host "-> Installing Minimize-Cursor-Cost into: $Target"
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
@@ -61,6 +66,7 @@ try {
     Write-Host '+ Installed.'
     Write-Host "   * CLAUDE.md, .cursorrules, PROMPT_TEMPLATES.md -> project root"
     Write-Host "   * $added new rules added to .cursor\rules\   ($skipped existing skipped)"
+    Write-Host "   * Temp clone (incl. assets\ and other repo files) will be removed on exit."
     Write-Host ''
     Write-Host "Next: open CLAUDE.md and fill in the 'Project-Specific Notes' section."
     Write-Host '      That single edit is the highest-ROI step.'

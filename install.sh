@@ -16,6 +16,10 @@ TARGET_DIR="$(pwd)"
 
 echo "→ Installing Minimize-Cursor-Cost into: $TARGET_DIR"
 
+# The repo is cloned into a system temp dir. Only the lean-cursor/ subtree is
+# copied into your project — top-level repo files (assets/, README.md, LICENSE,
+# install.*, CONTRIBUTING.md) never touch your project. The temp clone, including
+# the assets/ folder, is wiped by this trap on script exit.
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
@@ -65,6 +69,7 @@ echo
 echo "✓ Installed."
 echo "  • CLAUDE.md, .cursorrules, PROMPT_TEMPLATES.md → project root"
 echo "  • $added new rules added to .cursor/rules/   ($skipped existing skipped)"
+echo "  • Temp clone (incl. assets/ and other repo files) will be removed on exit."
 echo
 echo "Next: open CLAUDE.md and fill in the 'Project-Specific Notes' section."
 echo "      That single edit is the highest-ROI step."
