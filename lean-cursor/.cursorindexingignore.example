@@ -1,0 +1,40 @@
+# Copy to .cursorindexingignore and remove patterns your project needs indexed.
+# This reduces search/index noise while keeping files available for explicit use.
+
+# Dependencies and virtual environments
+node_modules/
+vendor/
+.venv/
+venv/
+Pods/
+
+# Generated output and caches
+dist/
+build/
+out/
+.next/
+.nuxt/
+target/
+bin/
+obj/
+coverage/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.gradle/
+.terraform/
+
+# Bundles, maps, and dependency locks
+*.min.js
+*.min.css
+*.map
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+poetry.lock
+Cargo.lock
+
+# Add project-specific generated data only when source files remain indexed.
+# fixtures/generated/
+# data/exports/

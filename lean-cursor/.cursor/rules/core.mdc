@@ -6,9 +6,8 @@ alwaysApply: true
 
 # Core Rules — Always Active
 
-These rules apply to every request, every language, every task. They exist to
-remove the largest sources of token waste: padding prose, full-file rewrites,
-redundant exploration, and ping-pong clarification.
+Minimize cost per accepted change, not tokens per response. Preserve correctness
+while removing padding, duplicated work, and unnecessary code.
 
 ## 1. Response Discipline
 
@@ -30,58 +29,48 @@ redundant exploration, and ping-pong clarification.
   - The user explicitly said "full file"
 - Never reprint unchanged imports, unchanged class members, or unchanged tests.
 
-## 3. One-Question Rule
+## 3. Scope and Questions
 
-When the request is ambiguous, ask exactly **one** highest-impact question.
-Never send a numbered list of clarifying questions — pick the blocker.
+- If a fact cannot be inferred or checked cheaply, ask exactly **one**
+  highest-impact question.
+- If work grows beyond the user's requested scope and would touch > 3 files or
+  > 150 lines, pause and ask where to start.
+- If the user explicitly requested larger work, proceed in bounded phases.
+- Never silently expand scope.
 
-## 4. Scope Guard
+## 4. Silent Reuse-First Gate
 
-If a task would touch > 3 files or > 150 lines, pause and respond:
+Before tools or edits, check internally:
 
-> "That's larger than a single edit. Start with `<file/function>`?"
+1. Can the supplied context answer the request without another read?
+2. Before creating a helper, type, file, dependency, fixture, or abstraction,
+   is there an existing equivalent to reuse? Search once if not already known.
+3. Can the requirement be met by extending the nearest existing pattern?
+4. What is the smallest safe edit and cheapest acceptance check?
+5. Is any missing fact truly blocking, or can it be inferred or checked cheaply?
 
-Never silently expand scope.
+Do not narrate this checklist. Prefer reuse and a small patch, but create new
+code when the requirement has no reasonable existing home.
 
 ## 5. Alternatives — Max 2
 
 When multiple approaches exist, present at most 2 and state your pick in one
 sentence. No "here are 5 ways…" enumerations.
 
-## 6. Tool-Call Discipline (Agent Mode)
-
-Every tool call costs latency and tokens — both for the call and for the
-response that gets piped back into context.
-
-- **Never re-read a file you already read this session.** Cache it mentally.
-- **Never list a directory you already listed.**
-- **Batch independent reads/searches into a single message.** Parallel >> serial.
-- Prefer `Grep` for known strings; reserve semantic search for "how does X work" questions.
-- Don't run `git status`, `ls`, or `pwd` "just to be safe" — only when you need the output to make a decision.
-- Don't run tests, linters, or type-checkers unless the user asked, the change is risky, or the task is "fix the failing tests".
-- After an edit, do a single targeted lint check on the changed file — not the whole repo.
-
-## 7. Context-Loading Discipline
-
-- Read only what you need to answer. If the user named a function, read that file — not its 12 neighbors.
-- For files > 500 lines, read targeted ranges (use offset/limit) or use search instead of full read.
-- Never paste a file into the response just to "show context" — refer to it by path and line range.
-- Never include lock files, generated bundles, or vendored dependencies in context.
-
-## 8. No Speculative Work
+## 6. No Speculative Work
 
 - Do not "while I'm here" refactor unrelated code.
 - Do not rename variables, restyle code, or "improve" comments unless asked.
 - Do not add tests, logging, error handling, or types beyond what the task requires
   or the surrounding code already uses.
 
-## 9. Confidence Signaling (cheap, prevents re-work)
+## 7. Confidence Signaling (cheap, prevents re-work)
 
 - Confident → just do it.
 - Uncertain about a value or behavior → mark inline with `// ⚠️ verify:` rather than asking.
-- Need a missing fact you cannot infer → ask one question (see Rule 3).
+- Need a missing fact you cannot infer or check cheaply → ask one question.
 
-## 10. Output Length Heuristic
+## 8. Output Length Heuristic
 
 | Request type            | Target shape                    |
 |-------------------------|---------------------------------|

@@ -1,75 +1,96 @@
-# install.ps1 — Drop Minimize-Cursor-Cost rules into the current project.
-# Windows PowerShell 5+ / PowerShell 7+
-#
-# Usage (from project root):
-#   irm https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.ps1 | iex
-# or:
-#   .\install.ps1
+param(
+    [ValidateSet('cursor', 'claude', 'legacy', 'all')]
+    [string]$Tool = 'cursor',
+    [string]$Rules = 'core',
+    [switch]$WithIndexIgnore
+)
 
+# Install only the adapters and scoped rules the target project needs.
 $ErrorActionPreference = 'Stop'
-
-$RepoUrl   = 'https://github.com/inboxpraveen/Minimize-Cursor-Cost'
-$SrcSubdir = 'lean-cursor'
-$Target    = (Get-Location).Path
-$Tmp       = Join-Path ([System.IO.Path]::GetTempPath()) ("mcc-" + [guid]::NewGuid().ToString('N'))
-
-# The repo is cloned into a system temp dir. Only the lean-cursor/ subtree is
-# copied into your project — top-level repo files (assets/, README.md, LICENSE,
-# install.*, CONTRIBUTING.md) never touch your project. The temp clone, including
-# the assets/ folder, is wiped by the finally{} block on script exit.
-
-Write-Host "-> Installing Minimize-Cursor-Cost into: $Target"
+$RepoUrl = if ($env:MCC_REPO_URL) { $env:MCC_REPO_URL } else { 'https://github.com/inboxpraveen/Minimize-Cursor-Cost' }
+$Target = (Get-Location).Path
+$Tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("mcc-" + [guid]::NewGuid().ToString('N'))
+$script:Added = 0
+$script:Skipped = 0
 
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Error 'git is required but not found. Install git and re-run.'
+    Write-Error 'git is required but not found.'
     exit 1
 }
 
+Write-Host "Installing Minimize-Cursor-Cost ($Tool) into: $Target"
+
 try {
     git clone --depth=1 $RepoUrl $Tmp 2>$null | Out-Null
-    $Src = Join-Path $Tmp $SrcSubdir
+    $Src = Join-Path $Tmp 'lean-cursor'
 
-    function Backup-IfExists($relPath) {
-        $full = Join-Path $Target $relPath
-        if (Test-Path $full) {
-            $bak = "$full.bak.$([int][double]::Parse((Get-Date -UFormat %s)))"
-            Write-Host "   * Backing up existing $relPath -> $(Split-Path $bak -Leaf)"
-            Move-Item $full $bak
-        }
-    }
-
-    Backup-IfExists 'CLAUDE.md'
-    Backup-IfExists '.cursorrules'
-    Backup-IfExists 'PROMPT_TEMPLATES.md'
-
-    Copy-Item (Join-Path $Src 'CLAUDE.md')           (Join-Path $Target 'CLAUDE.md')           -Force
-    Copy-Item (Join-Path $Src '.cursorrules')        (Join-Path $Target '.cursorrules')        -Force
-    Copy-Item (Join-Path $Src 'PROMPT_TEMPLATES.md') (Join-Path $Target 'PROMPT_TEMPLATES.md') -Force
-
-    # Merge .cursor/rules: don't clobber user rules; only add new ones.
-    $rulesDir = Join-Path $Target '.cursor\rules'
-    New-Item -ItemType Directory -Path $rulesDir -Force | Out-Null
-
-    $added = 0; $skipped = 0
-    Get-ChildItem (Join-Path $Src '.cursor\rules') -Filter '*.mdc' | ForEach-Object {
-        $dest = Join-Path $rulesDir $_.Name
-        if (Test-Path $dest) {
-            $skipped++
-            Write-Host "   * Skipping existing rule: $($_.Name)"
+    function Copy-IfMissing([string]$Source, [string]$Destination, [string]$Label) {
+        if (Test-Path $Destination) {
+            $script:Skipped++
+            Write-Host "  Skipping existing $Label"
         } else {
-            Copy-Item $_.FullName $dest
-            $added++
+            Copy-Item $Source $Destination
+            $script:Added++
         }
     }
 
-    Write-Host ''
-    Write-Host '+ Installed.'
-    Write-Host "   * CLAUDE.md, .cursorrules, PROMPT_TEMPLATES.md -> project root"
-    Write-Host "   * $added new rules added to .cursor\rules\   ($skipped existing skipped)"
-    Write-Host "   * Temp clone (incl. assets\ and other repo files) will be removed on exit."
-    Write-Host ''
-    Write-Host "Next: open CLAUDE.md and fill in the 'Project-Specific Notes' section."
-    Write-Host '      That single edit is the highest-ROI step.'
+    function Copy-Rule([string]$Rule) {
+        $source = Join-Path $Src ".cursor\rules\$Rule.mdc"
+        if (-not (Test-Path $source)) {
+            throw "Unknown rule: $Rule"
+        }
+        $destination = Join-Path $Target ".cursor\rules\$Rule.mdc"
+        Copy-IfMissing $source $destination "rule: $Rule.mdc"
+    }
+
+    Copy-IfMissing `
+        (Join-Path $Src 'PROMPT_TEMPLATES.md') `
+        (Join-Path $Target 'PROMPT_TEMPLATES.md') `
+        'PROMPT_TEMPLATES.md'
+
+    if ($Tool -in @('claude', 'all')) {
+        Copy-IfMissing `
+            (Join-Path $Src 'CLAUDE.md') `
+            (Join-Path $Target 'CLAUDE.md') `
+            'CLAUDE.md (project notes preserved)'
+    }
+
+    if ($Tool -in @('legacy', 'all')) {
+        Copy-IfMissing `
+            (Join-Path $Src '.cursorrules') `
+            (Join-Path $Target '.cursorrules') `
+            '.cursorrules'
+    }
+
+    if ($Tool -in @('cursor', 'all')) {
+        $rulesDir = Join-Path $Target '.cursor\rules'
+        New-Item -ItemType Directory -Path $rulesDir -Force | Out-Null
+        Copy-Rule 'core'
+        Copy-Rule 'agent-efficiency'
+
+        if ($Rules -eq 'all') {
+            Get-ChildItem (Join-Path $Src '.cursor\rules') -Filter '*.mdc' |
+                Where-Object { $_.BaseName -notin @('core', 'agent-efficiency') } |
+                ForEach-Object { Copy-Rule $_.BaseName }
+        } elseif ($Rules -and $Rules -ne 'core') {
+            $Rules.Split(',') |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ } |
+                ForEach-Object { Copy-Rule $_ }
+        }
+
+        if ($WithIndexIgnore) {
+            Copy-IfMissing `
+                (Join-Path $Src '.cursorindexingignore.example') `
+                (Join-Path $Target '.cursorindexingignore') `
+                '.cursorindexingignore'
+        }
+    }
+
+    Write-Host "Installed: $script:Added file(s); skipped existing: $script:Skipped."
+    if ($Tool -in @('claude', 'all')) {
+        Write-Host 'Next: fill in CLAUDE.md Project-Specific Notes if they are empty.'
+    }
 }
 finally {
     if (Test-Path $Tmp) { Remove-Item -Recurse -Force $Tmp }

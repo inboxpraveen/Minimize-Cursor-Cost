@@ -1,75 +1,111 @@
 #!/usr/bin/env bash
-# install.sh — Drop Minimize-Cursor-Cost rules into the current project.
-# macOS / Linux / WSL.
-#
-# Usage:
-#   curl -fsSL https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.sh | bash
-# or:
-#   bash install.sh
+# Install only the adapters and scoped rules the target project needs.
 
 set -euo pipefail
 
-REPO_URL="https://github.com/inboxpraveen/Minimize-Cursor-Cost"
+usage() {
+  echo "Usage: bash install.sh [--tool cursor|claude|legacy|all] [--rules core|all|name,...] [--with-index-ignore]"
+}
+
+TOOL="${MCC_TOOL:-cursor}"
+RULES="${MCC_RULES:-core}"
+WITH_INDEX_IGNORE="${MCC_WITH_INDEX_IGNORE:-0}"
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --tool) TOOL="${2:?--tool requires a value}"; shift 2 ;;
+    --rules) RULES="${2:?--rules requires a value}"; shift 2 ;;
+    --with-index-ignore) WITH_INDEX_IGNORE=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+case "$TOOL" in
+  cursor|claude|legacy|all) ;;
+  *) echo "Invalid tool: $TOOL" >&2; usage >&2; exit 2 ;;
+esac
+
+REPO_URL="${MCC_REPO_URL:-https://github.com/inboxpraveen/Minimize-Cursor-Cost}"
 SRC_SUBDIR="lean-cursor"
 TMP_DIR="$(mktemp -d)"
 TARGET_DIR="$(pwd)"
+added=0
+skipped=0
 
-echo "→ Installing Minimize-Cursor-Cost into: $TARGET_DIR"
-
-# The repo is cloned into a system temp dir. Only the lean-cursor/ subtree is
-# copied into your project — top-level repo files (assets/, README.md, LICENSE,
-# install.*, CONTRIBUTING.md) never touch your project. The temp clone, including
-# the assets/ folder, is wiped by this trap on script exit.
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
 if ! command -v git >/dev/null 2>&1; then
-  echo "✗ git is required but not found. Install git and re-run." >&2
+  echo "git is required but not found." >&2
   exit 1
 fi
 
+echo "Installing Minimize-Cursor-Cost ($TOOL) into: $TARGET_DIR"
 git clone --depth=1 "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1
-
 SRC="$TMP_DIR/$SRC_SUBDIR"
 
-# Backup any existing files we'd overwrite
-backup() {
-  local f="$1"
-  if [ -e "$TARGET_DIR/$f" ]; then
-    local bak="$TARGET_DIR/${f}.bak.$(date +%s)"
-    echo "  • Backing up existing $f → ${bak##*/}"
-    mv "$TARGET_DIR/$f" "$bak"
+copy_if_missing() {
+  local src="$1" dest="$2" label="$3"
+  if [ -e "$dest" ]; then
+    skipped=$((skipped+1))
+    echo "  Skipping existing $label"
+  else
+    cp "$src" "$dest"
+    added=$((added+1))
   fi
 }
 
-backup "CLAUDE.md"
-backup ".cursorrules"
-backup "PROMPT_TEMPLATES.md"
-
-cp "$SRC/CLAUDE.md"           "$TARGET_DIR/CLAUDE.md"
-cp "$SRC/.cursorrules"        "$TARGET_DIR/.cursorrules"
-cp "$SRC/PROMPT_TEMPLATES.md" "$TARGET_DIR/PROMPT_TEMPLATES.md"
-
-# Merge .cursor/rules: don't clobber user rules; only add ones that don't exist.
-mkdir -p "$TARGET_DIR/.cursor/rules"
-added=0; skipped=0
-for f in "$SRC/.cursor/rules/"*.mdc; do
-  name="$(basename "$f")"
-  dest="$TARGET_DIR/.cursor/rules/$name"
-  if [ -e "$dest" ]; then
-    skipped=$((skipped+1))
-    echo "  • Skipping existing rule: $name"
-  else
-    cp "$f" "$dest"
-    added=$((added+1))
+copy_rule() {
+  local rule="$1"
+  local src="$SRC/.cursor/rules/$rule.mdc"
+  if [ ! -f "$src" ]; then
+    echo "Unknown rule: $rule" >&2
+    exit 2
   fi
-done
+  copy_if_missing "$src" "$TARGET_DIR/.cursor/rules/$rule.mdc" "rule: $rule.mdc"
+}
 
-echo
-echo "✓ Installed."
-echo "  • CLAUDE.md, .cursorrules, PROMPT_TEMPLATES.md → project root"
-echo "  • $added new rules added to .cursor/rules/   ($skipped existing skipped)"
-echo "  • Temp clone (incl. assets/ and other repo files) will be removed on exit."
-echo
-echo "Next: open CLAUDE.md and fill in the 'Project-Specific Notes' section."
-echo "      That single edit is the highest-ROI step."
+copy_if_missing "$SRC/PROMPT_TEMPLATES.md" "$TARGET_DIR/PROMPT_TEMPLATES.md" "PROMPT_TEMPLATES.md"
+
+case "$TOOL" in
+  claude|all)
+    copy_if_missing "$SRC/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md (project notes preserved)"
+    ;;
+esac
+
+case "$TOOL" in
+  legacy|all)
+    copy_if_missing "$SRC/.cursorrules" "$TARGET_DIR/.cursorrules" ".cursorrules"
+    ;;
+esac
+
+if [ "$TOOL" = "cursor" ] || [ "$TOOL" = "all" ]; then
+  mkdir -p "$TARGET_DIR/.cursor/rules"
+  copy_rule "core"
+  copy_rule "agent-efficiency"
+
+  if [ "$RULES" = "all" ]; then
+    for file in "$SRC/.cursor/rules/"*.mdc; do
+      rule="$(basename "$file" .mdc)"
+      case "$rule" in core|agent-efficiency) continue ;; esac
+      copy_rule "$rule"
+    done
+  elif [ -n "$RULES" ] && [ "$RULES" != "core" ]; then
+    old_ifs="$IFS"; IFS=','
+    for rule in $RULES; do
+      rule="${rule//[[:space:]]/}"
+      [ -n "$rule" ] && copy_rule "$rule"
+    done
+    IFS="$old_ifs"
+  fi
+
+  if [ "$WITH_INDEX_IGNORE" = "1" ]; then
+    copy_if_missing "$SRC/.cursorindexingignore.example" "$TARGET_DIR/.cursorindexingignore" ".cursorindexingignore"
+  fi
+fi
+
+echo "Installed: $added file(s); skipped existing: $skipped."
+if [ "$TOOL" = "claude" ] || [ "$TOOL" = "all" ]; then
+  echo "Next: fill in CLAUDE.md Project-Specific Notes if they are empty."
+fi

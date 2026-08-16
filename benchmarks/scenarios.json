@@ -1,0 +1,47 @@
+[
+  {
+    "id": "bug-fix",
+    "goal": "Fix one reproducible defect with an exact error and known starting symbol.",
+    "prompt_fields": ["goal", "scope", "exact_error", "expected", "check", "non_goals"],
+    "acceptance": [
+      "The targeted regression check passes.",
+      "No unrelated behavior or public interface changes."
+    ]
+  },
+  {
+    "id": "feature-reuse",
+    "goal": "Add a bounded feature where an existing helper or pattern should be reused.",
+    "prompt_fields": ["goal", "scope", "existing_pattern", "expected", "check", "non_goals"],
+    "acceptance": [
+      "The feature check passes.",
+      "The existing pattern is reused and no duplicate helper or dependency is added."
+    ]
+  },
+  {
+    "id": "code-review",
+    "goal": "Review a fixed diff containing a known set of actionable defects.",
+    "prompt_fields": ["goal", "scope", "fixed_diff", "focus", "non_goals"],
+    "acceptance": [
+      "All seeded high-severity defects are reported.",
+      "No non-actionable findings or out-of-scope summaries are counted as defects."
+    ]
+  },
+  {
+    "id": "multi-file-change",
+    "goal": "Implement one coherent change across three or more known files.",
+    "prompt_fields": ["goal", "scope", "starting_symbols", "expected", "check", "non_goals"],
+    "acceptance": [
+      "The end-to-end acceptance check passes.",
+      "The implementation follows existing interfaces and contains no unrelated diff."
+    ]
+  },
+  {
+    "id": "failing-test-diagnosis",
+    "goal": "Diagnose and fix a deterministic failing test from a bounded failure log.",
+    "prompt_fields": ["goal", "scope", "failure_excerpt", "expected", "check", "non_goals"],
+    "acceptance": [
+      "The originally failing test passes.",
+      "The root cause is fixed without weakening or deleting the test."
+    ]
+  }
+]

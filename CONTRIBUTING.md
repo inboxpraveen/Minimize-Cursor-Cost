@@ -131,14 +131,20 @@ an existing one. As a guideline:
 
 ## Tests
 
-There's no automated test suite — these are prose rules. The validation is:
+Rule behavior is probabilistic, so validate cost and quality together:
 
-1. Drop the rule into a real project for the language.
-2. Run 5–10 typical prompts (a bug fix, a feature add, a refactor).
-3. Confirm the model behaves as the rule directs and doesn't regress on others.
+1. Choose the matching task in [`benchmarks/scenarios.json`](benchmarks/scenarios.json).
+2. Freeze the repository commit, prompt, model, settings, and acceptance check.
+3. Run `current` and proposed `adaptive` profiles at least three times each.
+4. Keep failed runs and summarize them with:
 
-If your rule changes behavior on the existing language rules, please note it
-in the PR.
+```bash
+python benchmarks/summarize.py benchmarks/results.jsonl
+```
+
+Core/agent changes and published savings claims must cover all five scenarios.
+Scoped language rules may run only their relevant scenario, but must show that
+acceptance quality did not fall. Attach the result data or report to the PR.
 
 ---
 

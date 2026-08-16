@@ -1,7 +1,7 @@
 # Minimize-Cursor-Cost
 
-> Drop-in AI rules for Cursor, Claude Code, Windsurf, and other AI IDEs that
-> typically cut project token usage by **60%+**.
+> Drop-in AI rules for Cursor, Claude Code, Windsurf, and other AI IDEs,
+> designed to reduce token usage without reducing accepted-change quality.
 
 No fluff in your AI's responses. No tutorials when you asked for a fix. No
 full-file rewrites when a 5-line patch will do. No re-reading the same file
@@ -28,8 +28,8 @@ curl -fsSL https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/m
 irm https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.ps1 | iex
 ```
 
-Then open `CLAUDE.md`, fill in the **Project-Specific Notes** at the bottom
-(2 minutes), and you're done. Your AI IDE will use these rules automatically.
+The default installs only Cursor's two core rules plus prompt templates. Choose
+tool and stack adapters explicitly when you need more.
 
 ---
 
@@ -68,12 +68,13 @@ lean-cursor/
 │       └── tests.mdc                   # *.test.*, *.spec.*, test_*.py
 │
 ├── PROMPT_TEMPLATES.md                 # Copy-paste prompt patterns
+├── .cursorindexingignore.example       # Optional generated/vendor exclusions
 └── SETUP_GUIDE.md                      # Per-stack quickstarts + troubleshooting
 ```
 
 ---
 
-## Why 60%+ savings (vs ~50% before)
+## How the rules reduce cost
 
 The first version of this project focused on **response-side** savings —
 diffs over rewrites, no preamble, scoped explanations. That covers about half
@@ -97,26 +98,27 @@ This release adds rules that attack agent-mode waste directly:
 - **Targeted reads** for files > 500 lines — never load the whole file just to
   find one function.
 
-Combined with the existing response-side rules and prompt templates, real
-projects now consistently land in the **60–70% reduction** range.
+The adaptive rules now optimize cost per accepted change, including retries and
+verification. Current savings will be published after the new benchmark reaches
+the required sample size.
 
 ---
 
-## Token savings (measured)
+## Previous benchmark (pre-adaptive rules)
 
-| Task                              | Without rules  | With rules    | Reduction |
-| --------------------------------- | -------------- | ------------- | --------- |
-| Simple bug fix (response)         | ~600 tokens    | ~120 tokens   | **80%**   |
-| Feature addition (response)       | ~1,200 tokens  | ~380 tokens   | **68%**   |
-| Code review (response)            | ~900 tokens    | ~280 tokens   | **69%**   |
-| Bug fix (your prompt, templated)  | ~200 tokens    | ~70 tokens    | **65%**   |
-| Agent: locate + edit one function | ~7,000 tokens  | ~2,200 tokens | **69%**   |
-| Agent: multi-file refactor        | ~25,000 tokens | ~9,500 tokens | **62%**   |
+| Task                              | No rules       | Previous pack | Historical reduction |
+| --------------------------------- | -------------- | ------------- | -------------------- |
+| Simple bug fix (response)         | ~600 tokens    | ~120 tokens   | **80%**              |
+| Feature addition (response)       | ~1,200 tokens  | ~380 tokens   | **68%**              |
+| Code review (response)            | ~900 tokens    | ~280 tokens   | **69%**              |
+| Bug fix (your prompt, templated)  | ~200 tokens    | ~70 tokens    | **65%**              |
+| Agent: locate + edit one function | ~7,000 tokens  | ~2,200 tokens | **69%**              |
+| Agent: multi-file refactor        | ~25,000 tokens | ~9,500 tokens | **62%**              |
 
-Methodology: same prompts, same models (Claude Sonnet / GPT-4 / Cursor's
-defaults), measured token I/O over 20-task sample. Your mileage varies with
-project size and prompt habits — see the [savings notes](SETUP_GUIDE.md#expected-token-savings)
-for guidance on hitting the high end.
+These figures came from the previous 20-task token-I/O sample and are retained
+only as historical results; they do not measure the adaptive rules. New results
+must pass the [cost-per-accepted-change benchmark](benchmarks/README.md), which
+includes failed runs, correction turns, verification, and quality regressions.
 
 The biggest single win is still **diff output vs full-file rewrite**: a
 200-line file rewrite costs ~2,000 tokens, the patch for the same change costs
@@ -170,13 +172,32 @@ curl -fsSL https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/m
 irm https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.ps1 | iex
 ```
 
-Both scripts:
-- Drop `CLAUDE.md`, `.cursorrules`, and `PROMPT_TEMPLATES.md` into your project root.
-- Merge `.cursor/rules/*.mdc` into your project (existing rules are NOT overwritten).
-- Back up any files they would replace (with a `.bak.<timestamp>` suffix).
-- Clone the repo to a system temp dir and **wipe it on exit** — the `assets/`,
-  `LICENSE`, `README.md`, `install.*`, and `CONTRIBUTING.md` files in this repo
-  never land in your project.
+Defaults install `PROMPT_TEMPLATES.md`, `core.mdc`, and
+`agent-efficiency.mdc` for Cursor. Existing files are skipped, so customized
+rules and `CLAUDE.md` project notes survive reinstalls.
+
+Selective examples:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.sh |
+  bash -s -- --tool cursor --rules typescript,react,tests --with-index-ignore
+
+bash install.sh --tool claude
+bash install.sh --tool legacy
+bash install.sh --tool all --rules all
+```
+
+```powershell
+.\install.ps1 -Tool cursor -Rules 'typescript,react,tests' -WithIndexIgnore
+.\install.ps1 -Tool claude
+.\install.ps1 -Tool legacy
+.\install.ps1 -Tool all -Rules all
+```
+
+`--tool cursor` installs `.mdc` rules without duplicate legacy/Claude
+adapters. `--tool claude` installs `CLAUDE.md`; `--tool legacy` installs
+`.cursorrules`. `--rules` accepts `core`, `all`, or comma-separated rule names.
+Both scripts clone to a temporary directory and remove it on exit.
 
 ### Option 2 — Manual
 
@@ -189,10 +210,13 @@ end wipes the temp clone, including the `assets/` folder.
 
 ```bash
 git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
-cp lean-cursor-tmp/lean-cursor/CLAUDE.md           .
-cp lean-cursor-tmp/lean-cursor/.cursorrules        .
 cp lean-cursor-tmp/lean-cursor/PROMPT_TEMPLATES.md .
-cp -r lean-cursor-tmp/lean-cursor/.cursor          .
+# Cursor:
+cp -r lean-cursor-tmp/lean-cursor/.cursor .
+# Or Claude Code:
+cp lean-cursor-tmp/lean-cursor/CLAUDE.md .
+# Or a legacy .cursorrules client:
+cp lean-cursor-tmp/lean-cursor/.cursorrules .
 rm -rf lean-cursor-tmp                             # removes the clone, incl. assets/
 ```
 
@@ -200,12 +224,18 @@ rm -rf lean-cursor-tmp                             # removes the clone, incl. as
 
 ```powershell
 git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
-Copy-Item lean-cursor-tmp\lean-cursor\CLAUDE.md            .
-Copy-Item lean-cursor-tmp\lean-cursor\.cursorrules         .
 Copy-Item lean-cursor-tmp\lean-cursor\PROMPT_TEMPLATES.md  .
-Copy-Item lean-cursor-tmp\lean-cursor\.cursor              . -Recurse
+# Cursor:
+Copy-Item lean-cursor-tmp\lean-cursor\.cursor . -Recurse
+# Or Claude Code:
+Copy-Item lean-cursor-tmp\lean-cursor\CLAUDE.md .
+# Or a legacy .cursorrules client:
+Copy-Item lean-cursor-tmp\lean-cursor\.cursorrules .
 Remove-Item lean-cursor-tmp -Recurse -Force                # removes the clone, incl. assets\
 ```
+
+Choose one adapter unless the same repository is intentionally used by
+multiple clients.
 
 ### Option 3 — Pick & choose
 
@@ -216,8 +246,8 @@ and drop them into your project's `.cursor/rules/`.
 
 ## Setup (2 minutes — the highest-ROI step)
 
-Open `CLAUDE.md` and fill in the **Project-Specific Notes** section at the
-bottom:
+If you installed the Claude adapter, open `CLAUDE.md` and fill in the
+**Project-Specific Notes** section at the bottom:
 
 ```markdown
 ### Stack
@@ -245,12 +275,12 @@ the AI doesn't have to ask is 200–600 tokens saved per turn.
 
 ### Three layers
 
-**1. `CLAUDE.md`** — Auto-loaded by Claude Code at session start. Enforces
-response discipline, sets diff-first output, holds your project context.
+**1. `CLAUDE.md`** — Installed with `--tool claude` or `all`; auto-loaded by
+Claude Code and holds concise behavior plus project context.
 
-**2. `.cursor/rules/*.mdc` + `.cursorrules`** — Cursor reads these on every
-request. The `.mdc` files are scoped by file glob, so Python rules only fire
-on `.py` files, mobile rules on Swift/Kotlin/Dart files, and so on.
+**2. `.cursor/rules/*.mdc`** — Installed with `--tool cursor` or `all`.
+Scoped rules fire only for matching files. `.cursorrules` is a legacy adapter,
+installed separately to avoid duplicate always-on context in Cursor.
 
 **3. `PROMPT_TEMPLATES.md`** — The human side. Copy the relevant template
 before each prompt to eliminate padding and produce tighter outputs.
@@ -296,7 +326,7 @@ If you write rules for a stack that's not yet covered, please consider
 
 | Tool                  | Support                                                              |
 | --------------------- | -------------------------------------------------------------------- |
-| **Cursor**            | ✅ `.cursorrules` + `.cursor/rules/*.mdc`                            |
+| **Cursor**            | ✅ `.cursor/rules/*.mdc` (`.cursorrules` only as legacy fallback)    |
 | **Claude Code**       | ✅ `CLAUDE.md` (auto-loaded)                                         |
 | **Windsurf**          | ✅ Reads `.cursorrules`                                              |
 | **Cline / Roo**       | ✅ Reads `.cursorrules` and `CLAUDE.md` as context                   |
@@ -309,9 +339,8 @@ If you write rules for a stack that's not yet covered, please consider
 ## FAQ
 
 **Q: Will this work on an existing project with custom rules?**
-Yes. The install script never overwrites a `.cursor/rules/*.mdc` file you
-already have — it only adds missing ones. Top-level files (`CLAUDE.md`, etc.)
-are backed up before being replaced.
+Yes. Installers skip every existing rule and top-level adapter. Customized
+`CLAUDE.md` project notes are preserved rather than replaced.
 
 **Q: Will the AI feel "less helpful" after I install this?**
 You'll lose: emoji-laden congratulations, "Great question!", multi-paragraph
@@ -339,9 +368,9 @@ Either edit the `.mdc` file directly (it's in your repo now), or add a more
 specific rule with a narrower glob — Cursor's later/more-specific rules win.
 
 **Q: Does this affect the quality of generated code?**
-No. The rules constrain *output shape and tool usage*, not the model's
-reasoning. Code quality is unchanged or slightly better (less drift, fewer
-unnecessary refactors).
+The rules are designed to preserve quality, but any hard context or verification
+limit can cause regressions. The benchmark requires acceptance rate to remain
+flat while tokens per accepted change decrease.
 
 ---
 

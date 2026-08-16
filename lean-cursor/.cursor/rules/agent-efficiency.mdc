@@ -6,17 +6,8 @@ alwaysApply: true
 
 # Agent Efficiency Rules
 
-In agent mode, response tokens are usually NOT the dominant cost. The dominant
-costs are:
-
-1. **Tool-call results piped back into context** (a single `read_file` of a
-   2,000-line file can cost more than the entire response).
-2. **Re-running expensive tools** (semantic search, repo-wide grep, full builds).
-3. **Multi-turn ping-pong** when one well-formed turn would have sufficed.
-
-These rules attack all three.
-
----
+Tool results, repeated searches, and correction loops usually cost more than
+the final response. Gather the minimum evidence needed for a correct change.
 
 ## 1. Plan Before Acting
 
@@ -26,7 +17,7 @@ Before issuing tool calls, state internally (or briefly to user, max 1 line):
 
 Skip planning chatter for trivial tasks (one-line edits, single-file reads).
 
-## 2. Cheapest Tool Wins
+## 2. Elastic Evidence Budget
 
 | You need to…                              | Use…                              | Don't use…                          |
 |-------------------------------------------|-----------------------------------|-------------------------------------|
@@ -35,6 +26,16 @@ Skip planning chatter for trivial tasks (one-line edits, single-file reads).
 | Understand "how does X work"              | Semantic search, then targeted read | Reading 10 files speculatively    |
 | Read a known function in a known file     | Targeted `read` (offset/limit)    | Full-file read on a 1k-line file    |
 | Check a single command's output           | Run it once                       | Run it, then `--help`, then again   |
+
+Use this evidence ladder:
+
+1. Use context already supplied.
+2. Run one exact symbol, path, or error search.
+3. Read only the matching function or ±20 lines.
+4. Widen one step only when current evidence is insufficient or contradictory.
+
+If two widened searches produce no new evidence, stop and ask one focused
+question or report the blocker. Do not keep exploring by habit.
 
 ## 3. Batch Independent Calls
 
@@ -63,27 +64,43 @@ The "let me look around the repo first" instinct burns tokens fast.
 - If the user gave you an error, search for the error string first.
 - Only widen the search if the targeted approach failed.
 
-## 7. Build / Test / Lint Discipline
+## 7. Bound Tool Output
+
+- Set search result limits before running broad queries.
+- Filter commands at the source to exit status, failing case names, and relevant
+  stack frames; keep the full log available by path when needed.
+- Avoid full directory trees, complete histories, passing-test output, generated
+  files, lock files, vendored code, and minified bundles.
+- If output could exceed ~80 useful lines, narrow the command or request a
+  summary plus the full-log path.
+
+## 8. Risk-Based Verification
 
 - Never run a full test suite to verify a one-line typo fix.
 - Never run a full type-check or lint of the whole repo after touching one file.
-- After an edit, run targeted checks on the changed file only.
-- If the user didn't ask you to run tests, don't run them.
+- Text, comment, and format-only changes need no check unless requested.
+- For normal code, run the cheapest targeted check that covers changed behavior
+  when one is available.
+- Bug fixes, public APIs, auth, migrations, and configuration changes require
+  the smallest relevant test, lint, parse, or validation check.
+- Broaden verification only when the change's risk or the user's request
+  requires it.
 
-## 8. Don't Babysit Long-Running Commands
+## 9. Don't Babysit Long-Running Commands
 
 - Set generous timeouts and move on.
 - Never poll a backgrounded process repeatedly "just to check".
 - For dev servers/watchers: launch and walk away.
 
-## 9. Stop When Done
+## 10. Stop When Done
 
-- When the requested change is in place, stop.
-- Do not run extra verification steps "for safety".
+- Stop when the requested change is in place, its acceptance check passes, and
+  the diff contains no unrelated work.
+- If the same failure repeats without new evidence, stop looping and report it.
 - Do not write a summary of changes the user can already see in the diff.
 - Do not propose follow-up work unless the user asked.
 
-## 10. No Redundant Confirmation
+## 11. No Redundant Confirmation
 
 - Don't echo back the file path you just edited.
 - Don't say "I have updated X" when the diff already shows that.

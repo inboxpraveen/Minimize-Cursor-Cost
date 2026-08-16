@@ -9,6 +9,25 @@ what shape of answer is wanted.
 
 ---
 
+## DEFAULT TASK CONTRACT
+
+Use this when no specialized template fits:
+
+```
+Goal: {one sentence}
+Scope: {file, symbol, or bounded area}
+Evidence: {exact error, relevant code, or existing pattern}
+Expected: {observable behavior}
+Check: {smallest acceptance test}
+Non-goals: {what must not change}
+Stop when: the check passes and no unrelated code changed
+```
+
+Omit fields that add no information. Do not ask the agent to repeat this
+contract or narrate its plan.
+
+---
+
 ## 🐛 BUG FIX
 
 ```
@@ -221,14 +240,14 @@ No context fluff. One question = one answer.
 These compound on top of the templates above and unlock the path from ~50% to
 ~60–70% total reduction.
 
-### 1. Chunk by file, not by feature
-A "build login + signup + password reset" prompt is 3 features × N files. Send
-them as 3 separate sessions; the model loses focus past file #2 and starts
-re-reading.
+### 1. Keep one bounded task per chat
+Keep related multi-file work together, but start a new chat when the goal
+changes. Give the exact starting file, symbol, diff, or error; attach folders
+or codebase-wide context only when the task genuinely spans them.
 
-### 2. Pin context once, refer by path after
-On turn 1, paste the relevant function. On every turn after, refer to it as
-`{file}:{function}` — the model already has it.
+### 2. Reuse context already in the chat
+Paste a relevant function or error once, then refer to `{file}:{symbol}`.
+Do not resend terminal history, generated output, or unchanged files.
 
 ### 3. Cap your own iteration loops
 Set a personal rule: max 3 back-and-forths per task. If you're past 3, the
@@ -240,16 +259,26 @@ prompt was too vague. Restart with a tighter spec.
 - Architecture, novel debugging → top-tier reasoning model.
 - Don't burn the top tier on a typo.
 
-### 5. Disable "always show full file" features
-Most IDEs have a setting to send the whole open file as context. Turn it off,
-or scope to selection. A 1,500-line file pasted on every turn is a 1,500-token
-tax per turn.
+### 5. Choose the cheapest capable mode
+- Read-only answer or explanation → Ask.
+- Bounded implementation with known scope → Agent.
+- Ambiguous or multi-system design → Plan, then Agent.
+- Reproducible difficult failure → Debug.
 
-### 6. Avoid asking "what do you think?"
+Do not use Agent when no tools or edits are needed. For large work, resolve
+ambiguity once with a strong model, then execute bounded steps cheaply.
+
+### 6. Control automatic context
+Most IDEs have a setting to send the whole open file as context. Turn it off,
+or scope to selection. Inspect Cursor's context indicator and disable unused
+MCP servers. Prefer `.cursorindexingignore` for generated/index noise;
+`.cursorignore` is not a security boundary for terminal or MCP access.
+
+### 7. Avoid asking "what do you think?"
 Open-ended questions invite essays. Ask "yes or no?", "option A or B?", or
 "in one sentence, why?".
 
-### 7. Use prompt caching where supported
+### 8. Use prompt caching where supported
 Tools like Claude / Cursor cache stable prefixes. Keep `CLAUDE.md` + rules
 stable; put the volatile task at the end of the message. Re-edit your rule
 files only when actually improving them.

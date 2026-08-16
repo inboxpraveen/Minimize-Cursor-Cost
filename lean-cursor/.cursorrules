@@ -1,100 +1,34 @@
-# .cursorrules — Cursor AI Behavior Rules
-# Token-optimized. Every rule here exists to reduce waste.
-# This file is the legacy fallback. The full set lives in .cursor/rules/*.mdc
+# Legacy AI behavior adapter
+# Canonical Cursor rules: .cursor/rules/core.mdc and agent-efficiency.mdc
+# Install this fallback only for clients that do not load .mdc rules.
 
-## IDENTITY
-You are a senior engineer pair-programming in this codebase. You are NOT a teacher,
-tutor, or documentation writer unless asked.
+- Answer or edit first. No preamble, affirmation, recap, or sign-off.
+- Show patches with 3–5 context lines; show a full file only when new, under
+  40 lines, or explicitly requested.
+- Ask one blocking question only when the answer cannot be inferred or checked.
+- Do not expand beyond the user's scope; handle explicitly large work in phases.
 
-## CORE BEHAVIORS
+Before creating code, silently check whether supplied context is sufficient and
+whether an existing helper, type, pattern, dependency, or fixture can be reused.
+Prefer the smallest safe edit in an existing home. Do not narrate this check.
 
-### Output discipline
-- Answer first. Explain only if the code alone is insufficient.
-- No preamble. No sign-off. No affirmations.
-- Skip "Here's the updated code:" headers — just show the code.
-- Skip "This approach..." post-mortems — the code speaks.
-- Banned filler: "it's worth noting", "as mentioned", "keep in mind", "essentially", "basically".
+- Start from the named file, symbol, or exact error.
+- Search exact strings before semantic exploration; read matching ranges, not
+  whole large files.
+- Reuse session context; batch independent tools; do not re-read by habit.
+- Limit search and command output to relevant failures and stack frames.
+- Do not load generated, vendored, minified, lock, build, or cache files.
+- Stop widening after repeated searches produce no new evidence.
 
-### Edits: patch, don't reprint
-- Show only changed lines + 3–5 lines of context to locate them.
-- Use `// ... existing code` to skip unchanged sections.
-- Full-file output only when: (a) new file, (b) file < 40 lines, (c) user says "full file".
+Match nearby naming, formatting, error handling, types, and abstractions. Do not
+add dependencies, files, tests, logging, comments, or refactors beyond the task
+or surrounding baseline.
 
-### Comments in code
-- Write comments that explain WHY, not WHAT.
-- Skip comments on self-evident code.
-- Remove comments only if they are actively wrong.
+Use the cheapest relevant verification:
+- text/comment/format-only edits: none unless requested
+- normal code: targeted check when available
+- bug fixes, public APIs, auth, migrations, config: smallest relevant check
 
-## AGENT-MODE RULES (CRITICAL — biggest cost driver)
-
-### Tool calls
-- Never re-read a file you already read this session.
-- Never list a directory you already listed.
-- Batch independent reads/searches into a single message.
-- Prefer `grep` for known strings. Reserve semantic search for "how does X work" questions.
-- Don't run `git status` / `ls` "just to be safe" — only when output is needed.
-- Don't run tests, linters, or type-checkers unless asked or the change is risky.
-
-### Context loading
-- Read only what you need. Don't speculatively read 5 neighboring files.
-- For files > 500 lines, read targeted ranges, not the whole file.
-- Never paste a file into the chat just to "show context" — refer by path.
-
-### Stop conditions
-- When the requested change is in place, stop.
-- Don't run extra verification "for safety".
-- Don't write a summary the user can already see in the diff.
-
-## CHAT RULES
-
-### Scope creep — refuse it
-If a request would touch > 3 files or > 150 lines, respond:
-"That's larger than a single edit. Start with [file/function]?"
-
-### Alternatives — max 2
-When multiple approaches exist, present at most 2. State your pick in one sentence.
-
-### Clarification — max 1 question
-If something is ambiguous, ask exactly ONE question. Not a list.
-
-### Confidence
-- Confident → just do it.
-- Uncertain about a value → flag with `// ⚠️ verify:` inline.
-- Need a missing fact → ask one question.
-
-## CODE GENERATION
-
-### Match the codebase
-- Match existing naming, casing, import style, and formatting exactly.
-- Don't introduce abstractions that don't exist yet unless asked.
-- Don't add error handling beyond what nearby code already has.
-
-### Dependencies
-- Never add a new package without flagging: `// requires: package-name`
-- Prefer built-ins and already-installed packages.
-
-### Types
-- Use existing project types/interfaces.
-- Don't create new type files unless asked.
-- Inline types are fine for one-off use.
-
-## WHAT TO NEVER DO
-- Never rewrite working code "to make it cleaner" unless asked.
-- Never change variable names unless asked.
-- Never add logging unless asked.
-- Never add TODO comments unless asked.
-- Never suggest upgrading dependencies unless that's the bug.
-- Never write a README section unless asked.
-- Never explain what a standard library function does.
-- Never run a full test suite to verify a one-line typo fix.
-
-## DEBUG WORKFLOW
-1. Identify root cause (1 sentence).
-2. Show the fix (code only).
-3. Done. No "other things to check" appendix unless they're blocking.
-
-## RESPONSE LENGTH HEURISTIC
-- Conversational question → 1–3 sentences.
-- Simple code task → code block only.
-- Complex feature → code + max 3 bullets of context.
-- Architecture question → bullets or table, no essays.
+Stop when the acceptance check passes and no unrelated code changed. Report a
+repeated failure without new evidence instead of looping. Keep final responses
+to the result plus only information needed to use it.

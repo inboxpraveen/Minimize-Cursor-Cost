@@ -33,6 +33,7 @@ This guide gets you to maximum savings (60%+) in under 10 minutes.
 | `.cursor/rules/markdown.mdc`      | Auto-applied to `.md/.mdx`                             | Cuts doc bloat                   |
 | `.cursor/rules/tests.mdc`         | Auto-applied to test files                             | Lean test output                 |
 | `PROMPT_TEMPLATES.md`             | Cheatsheet for writing efficient prompts               | 50–80% prompt reduction          |
+| `.cursorindexingignore.example`   | Optional generated/vendor index exclusions             | Cuts retrieval noise             |
 
 ---
 
@@ -50,10 +51,24 @@ curl -fsSL https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/m
 irm https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.ps1 | iex
 ```
 
-The scripts:
-- Drop top-level files (`CLAUDE.md`, `.cursorrules`, `PROMPT_TEMPLATES.md`) into the current directory.
-- Merge `.cursor/rules/*.mdc` files (existing user rules are NOT overwritten).
-- Back up any replaced top-level files with `.bak.<timestamp>` suffix.
+The default installs Cursor's `core.mdc`, `agent-efficiency.mdc`, and
+`PROMPT_TEMPLATES.md`. Existing files are never overwritten.
+
+```bash
+bash install.sh --tool cursor --rules python,tests --with-index-ignore
+bash install.sh --tool claude
+bash install.sh --tool legacy
+```
+
+```powershell
+.\install.ps1 -Tool cursor -Rules 'python,tests' -WithIndexIgnore
+.\install.ps1 -Tool claude
+.\install.ps1 -Tool legacy
+```
+
+Use `--rules all` / `-Rules all` only when you want every scoped rule. Use
+`--tool all` / `-Tool all` only for projects intentionally shared across all
+supported clients; otherwise it adds duplicate behavioral context.
 
 ### Manual
 
@@ -72,9 +87,16 @@ your-project/
 └── PROMPT_TEMPLATES.md              ← keep anywhere accessible
 ```
 
-You don't need every `.mdc` file — only drop the ones for languages and
-frameworks you actually use. Cursor only fires rules whose globs match the
-files in your project.
+You don't need every `.mdc` file. Install only matching languages/frameworks;
+fewer applicable rules means less context and fewer conflicting instructions.
+
+### Context exclusions
+
+Copy `.cursorindexingignore.example` to `.cursorindexingignore`, then remove
+patterns your project needs indexed. Use it for generated output, dependencies,
+caches, and large derived data. Use `.cursorignore` only when content should
+also be unavailable to Cursor features; it is not a security boundary for
+terminal commands or MCP tools.
 
 ---
 
