@@ -9,6 +9,9 @@ alwaysApply: true
 Minimize cost per accepted change, not tokens per response. Preserve correctness
 while removing padding, duplicated work, and unnecessary code.
 
+Tool calls, evidence gathering, verification, and stop conditions are governed by
+`agent-efficiency.mdc`. This file governs response shape, scope, and code output.
+
 ## 1. Response Discipline
 
 - Start with the answer or the code. No preamble.
@@ -42,12 +45,10 @@ while removing padding, duplicated work, and unnecessary code.
 
 Before tools or edits, check internally:
 
-1. Can the supplied context answer the request without another read?
-2. Before creating a helper, type, file, dependency, fixture, or abstraction,
+1. Before creating a helper, type, file, dependency, fixture, or abstraction,
    is there an existing equivalent to reuse? Search once if not already known.
-3. Can the requirement be met by extending the nearest existing pattern?
-4. What is the smallest safe edit and cheapest acceptance check?
-5. Is any missing fact truly blocking, or can it be inferred or checked cheaply?
+2. Can the requirement be met by extending the nearest existing pattern?
+3. What is the smallest safe edit?
 
 Do not narrate this checklist. Prefer reuse and a small patch, but create new
 code when the requirement has no reasonable existing home.

@@ -11,11 +11,9 @@ the final response. Gather the minimum evidence needed for a correct change.
 
 ## 1. Plan Before Acting
 
-Before issuing tool calls, state internally (or briefly to user, max 1 line):
-- What file or symbol you're targeting
-- Which tool is the cheapest way to find it
-
-Skip planning chatter for trivial tasks (one-line edits, single-file reads).
+Before issuing tool calls, decide internally (or state to the user in max 1 line)
+what file or symbol you are targeting and which tool is the cheapest way to find
+it. Skip planning chatter for trivial tasks (one-line edits, single-file reads).
 
 ## 2. Elastic Evidence Budget
 
@@ -29,13 +27,16 @@ Skip planning chatter for trivial tasks (one-line edits, single-file reads).
 
 Use this evidence ladder:
 
-1. Use context already supplied.
-2. Run one exact symbol, path, or error search.
+1. Use context already supplied. If the user gave a file path, start there; if
+   the user gave an error, search for the error string first.
+2. Run one exact symbol, path, or error search. Prefer `grep` for a known symbol
+   over reading a file to find it.
 3. Read only the matching function or ±20 lines.
 4. Widen one step only when current evidence is insufficient or contradictory.
 
-If two widened searches produce no new evidence, stop and ask one focused
-question or report the blocker. Do not keep exploring by habit.
+The "let me look around the repo first" instinct burns tokens fast. Only widen
+when the targeted approach failed. If two widened searches produce no new
+evidence, stop and ask one focused question or report the blocker.
 
 ## 3. Batch Independent Calls
 
@@ -50,21 +51,7 @@ context-handoff tokens.
 - If you genuinely think the file changed (e.g., you just edited it and need to
   verify), re-read only the changed range.
 
-## 5. Search Before Reading
-
-For unfamiliar code, prefer `grep` for the symbol you care about, then read
-only the matching ±20 lines. Do not read the entire file just to find one
-function.
-
-## 6. Don't Speculatively Explore
-
-The "let me look around the repo first" instinct burns tokens fast.
-
-- If the user gave you a file path, start there.
-- If the user gave you an error, search for the error string first.
-- Only widen the search if the targeted approach failed.
-
-## 7. Bound Tool Output
+## 5. Bound Tool Output
 
 - Set search result limits before running broad queries.
 - Filter commands at the source to exit status, failing case names, and relevant
@@ -74,7 +61,7 @@ The "let me look around the repo first" instinct burns tokens fast.
 - If output could exceed ~80 useful lines, narrow the command or request a
   summary plus the full-log path.
 
-## 8. Risk-Based Verification
+## 6. Risk-Based Verification
 
 - Never run a full test suite to verify a one-line typo fix.
 - Never run a full type-check or lint of the whole repo after touching one file.
@@ -86,23 +73,19 @@ The "let me look around the repo first" instinct burns tokens fast.
 - Broaden verification only when the change's risk or the user's request
   requires it.
 
-## 9. Don't Babysit Long-Running Commands
+## 7. Don't Babysit Long-Running Commands
 
 - Set generous timeouts and move on.
 - Never poll a backgrounded process repeatedly "just to check".
 - For dev servers/watchers: launch and walk away.
 
-## 10. Stop When Done
+## 8. Stop When Done
 
 - Stop when the requested change is in place, its acceptance check passes, and
   the diff contains no unrelated work.
 - If the same failure repeats without new evidence, stop looping and report it.
-- Do not write a summary of changes the user can already see in the diff.
+- Do not write a summary of changes the user can already see in the diff, and do
+  not echo back the file path you just edited.
 - Do not propose follow-up work unless the user asked.
-
-## 11. No Redundant Confirmation
-
-- Don't echo back the file path you just edited.
-- Don't say "I have updated X" when the diff already shows that.
-- A short closing sentence (≤ 1 line) is enough only when something the user
-  needs to do is non-obvious (e.g., "restart the dev server").
+- A closing sentence (≤ 1 line) is warranted only when something the user needs
+  to do is non-obvious (e.g., "restart the dev server").

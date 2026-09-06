@@ -1,7 +1,8 @@
 # Minimize-Cursor-Cost
 
-> Drop-in AI rules for Cursor, Claude Code, Windsurf, and other AI IDEs,
-> designed to reduce token usage without reducing accepted-change quality.
+> Drop-in AI rules for Cursor, Claude Code, Codex, Copilot, Windsurf, and any
+> other agent that reads `AGENTS.md` — designed to reduce token usage without
+> reducing accepted-change quality.
 
 No fluff in your AI's responses. No tutorials when you asked for a fix. No
 full-file rewrites when a 5-line patch will do. No re-reading the same file
@@ -29,7 +30,8 @@ irm https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/ins
 ```
 
 The default installs only Cursor's two core rules plus prompt templates. Choose
-tool and stack adapters explicitly when you need more.
+tool and stack adapters explicitly when you need more — `--tool agents` for the
+cross-tool `AGENTS.md`, `--tool claude` for Claude Code.
 
 ---
 
@@ -37,8 +39,12 @@ tool and stack adapters explicitly when you need more.
 
 ```
 lean-cursor/
+├── AGENTS.md                           # Cross-tool standard — Cursor, Codex, Copilot, Windsurf, Zed…
 ├── CLAUDE.md                           # Auto-loaded by Claude Code on session start
 ├── .cursorrules                        # Cursor — legacy fallback rules
+├── .claude/
+│   └── rules/                          # Same scoped rules, Claude Code `paths:` format
+│       └── *.md                        # Generated from .cursor/rules/*.mdc
 ├── .cursor/
 │   └── rules/
 │       ├── core.mdc                    # 🔥 Always-active response discipline
@@ -70,6 +76,9 @@ lean-cursor/
 ├── PROMPT_TEMPLATES.md                 # Copy-paste prompt patterns
 ├── .cursorindexingignore.example       # Optional generated/vendor exclusions
 └── SETUP_GUIDE.md                      # Per-stack quickstarts + troubleshooting
+
+tools/
+└── gen-claude-rules.py                 # Regenerates .claude/rules/ from .cursor/rules/
 ```
 
 ---
@@ -98,6 +107,17 @@ This release adds rules that attack agent-mode waste directly:
 - **Targeted reads** for files > 500 lines — never load the whole file just to
   find one function.
 
+It also trims the rules you pay for on *every* request:
+
+- **Scoped rules for Claude Code, not just Cursor.** Claude Code reads
+  path-scoped rules from `.claude/rules/*.md`, which only load when you touch a
+  matching file. All 20 language rules now ship in that format too, so a Python
+  project stops carrying React rules around.
+- **One adapter, not four.** `CLAUDE.md`, `AGENTS.md` and `.cursorrules` say the
+  same things. Install two and you send those rules twice. The installer picks
+  one by default.
+- **Install only matching rules.** A Vue rule in a Go repo is pure overhead.
+
 The adaptive rules now optimize cost per accepted change, including retries and
 verification. Current savings will be published after the new benchmark reaches
 the required sample size.
@@ -123,6 +143,50 @@ includes failed runs, correction turns, verification, and quality regressions.
 The biggest single win is still **diff output vs full-file rewrite**: a
 200-line file rewrite costs ~2,000 tokens, the patch for the same change costs
 ~200.
+
+---
+
+## Model routing — the other half of the bill
+
+Rules decide how many tokens a task spends. The model decides what each token
+costs — and that gap has grown a lot. List prices per million tokens, **as of
+2026-09-06**; check the sources before you rely on them:
+
+| Model                  | Input | Output | Cached input |
+| ---------------------- | ----- | ------ | ------------ |
+| Cursor Composer 2.5    | $0.50 | $2.50  | $0.20        |
+| Claude Haiku 4.5       | $1    | $5     | see docs     |
+| Claude Sonnet 5        | $2    | $10    | see docs     |
+| Cursor Grok 4.6 / 4.5  | $2    | $6     | $0.50        |
+| Claude Opus 5          | $5    | $25    | see docs     |
+| OpenAI GPT-6 Astra     | $10   | $50    | $1           |
+
+Anthropic prices cache reads and cache writes separately per model — check the
+pricing page rather than assuming a ratio.
+
+Sources: [Anthropic pricing](https://claude.com/pricing#api) ·
+[Cursor models & pricing](https://cursor.com/docs/models-and-pricing) ·
+[OpenAI GPT-6 Astra](https://openai.com/index/gpt-6-astra/)
+
+That's a 20× spread from top to bottom. Three habits follow — these are yours
+to apply, not something a rule file can do for you:
+
+1. **Turn effort down before you turn the model down.** Most models now have a
+   reasoning/effort setting. One notch down on a good model usually beats
+   switching to a weaker one, and it cuts the number of tool calls.
+2. **Don't run the top tier on typo fixes.** Save it for architecture and
+   debugging you can't reason through yourself.
+3. **Keep your rule files still.** Cached input is 2–10× cheaper than fresh
+   input, but caching matches on the prefix — edit `CLAUDE.md` mid-task and you
+   pay full price for the whole thing again.
+
+Cursor splits usage into two pools: its own models (Composer 2.5, Grok) come
+with a generous allowance, while Claude, GPT and Gemini bill against a separate
+pool at API rates. Which pool your long agent sessions land in is the single
+biggest thing on your Cursor bill.
+
+[`PROMPT_TEMPLATES.md`](lean-cursor/PROMPT_TEMPLATES.md) § Advanced cost levers
+has the longer version.
 
 ---
 
@@ -160,6 +224,17 @@ Don't see your stack? See [Adding your own language rules](#adding-your-own-lang
 
 ## Installation
 
+The rules themselves are plain text — they work anywhere your editor does. Only
+the installers care about your OS:
+
+| | Runs on | Needs |
+| --- | --- | --- |
+| `install.sh` | macOS, Linux, WSL, Git Bash | `git`, bash |
+| `install.ps1` | Windows PowerShell 5.1+, or PowerShell 7 on macOS/Linux | `git` |
+
+Or skip both and copy the files by hand (Option 2). Contributors regenerating
+`.claude/rules/` also need Python 3.7+.
+
 ### Option 1 — One-liner (recommended)
 
 ```bash
@@ -182,22 +257,34 @@ Selective examples:
 curl -fsSL https://raw.githubusercontent.com/inboxpraveen/Minimize-Cursor-Cost/main/install.sh |
   bash -s -- --tool cursor --rules typescript,react,tests --with-index-ignore
 
-bash install.sh --tool claude
+bash install.sh --tool claude --rules python,tests
+bash install.sh --tool agents
 bash install.sh --tool legacy
 bash install.sh --tool all --rules all
 ```
 
 ```powershell
 .\install.ps1 -Tool cursor -Rules 'typescript,react,tests' -WithIndexIgnore
-.\install.ps1 -Tool claude
+.\install.ps1 -Tool claude -Rules 'python,tests'
+.\install.ps1 -Tool agents
 .\install.ps1 -Tool legacy
 .\install.ps1 -Tool all -Rules all
 ```
 
-`--tool cursor` installs `.mdc` rules without duplicate legacy/Claude
-adapters. `--tool claude` installs `CLAUDE.md`; `--tool legacy` installs
-`.cursorrules`. `--rules` accepts `core`, `all`, or comma-separated rule names.
+| `--tool`   | Installs                                                      |
+| ---------- | ------------------------------------------------------------- |
+| `cursor`   | `.cursor/rules/*.mdc` (default)                                |
+| `claude`   | `CLAUDE.md` + `.claude/rules/*.md` for any rules you name      |
+| `agents`   | `AGENTS.md` — read natively by Cursor, Codex, Copilot, Windsurf, Zed, Aider and others |
+| `legacy`   | `.cursorrules`                                                 |
+| `all`      | All four — only for a repo genuinely shared across all of them |
+
+`--rules` accepts `core`, `all`, or comma-separated rule names, and applies to
+both `cursor` and `claude`. Every mode also installs `PROMPT_TEMPLATES.md`.
 Both scripts clone to a temporary directory and remove it on exit.
+
+Stick to one adapter. `--tool all` sends the same rules three or four times
+over.
 
 ### Option 2 — Manual
 
@@ -213,8 +300,11 @@ git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
 cp lean-cursor-tmp/lean-cursor/PROMPT_TEMPLATES.md .
 # Cursor:
 cp -r lean-cursor-tmp/lean-cursor/.cursor .
-# Or Claude Code:
+# Or Claude Code (CLAUDE.md + the scoped rules your stack uses):
 cp lean-cursor-tmp/lean-cursor/CLAUDE.md .
+mkdir -p .claude/rules && cp lean-cursor-tmp/lean-cursor/.claude/rules/python.md .claude/rules/
+# Or any AGENTS.md-aware agent (Codex, Copilot, Windsurf, Zed, Aider…):
+cp lean-cursor-tmp/lean-cursor/AGENTS.md .
 # Or a legacy .cursorrules client:
 cp lean-cursor-tmp/lean-cursor/.cursorrules .
 rm -rf lean-cursor-tmp                             # removes the clone, incl. assets/
@@ -227,8 +317,12 @@ git clone https://github.com/inboxpraveen/Minimize-Cursor-Cost lean-cursor-tmp
 Copy-Item lean-cursor-tmp\lean-cursor\PROMPT_TEMPLATES.md  .
 # Cursor:
 Copy-Item lean-cursor-tmp\lean-cursor\.cursor . -Recurse
-# Or Claude Code:
+# Or Claude Code (CLAUDE.md + the scoped rules your stack uses):
 Copy-Item lean-cursor-tmp\lean-cursor\CLAUDE.md .
+New-Item -ItemType Directory .claude\rules -Force | Out-Null
+Copy-Item lean-cursor-tmp\lean-cursor\.claude\rules\python.md .claude\rules\
+# Or any AGENTS.md-aware agent (Codex, Copilot, Windsurf, Zed, Aider…):
+Copy-Item lean-cursor-tmp\lean-cursor\AGENTS.md .
 # Or a legacy .cursorrules client:
 Copy-Item lean-cursor-tmp\lean-cursor\.cursorrules .
 Remove-Item lean-cursor-tmp -Recurse -Force                # removes the clone, incl. assets\
@@ -246,8 +340,8 @@ and drop them into your project's `.cursor/rules/`.
 
 ## Setup (2 minutes — the highest-ROI step)
 
-If you installed the Claude adapter, open `CLAUDE.md` and fill in the
-**Project-Specific Notes** section at the bottom:
+Open whichever adapter you installed — `CLAUDE.md` or `AGENTS.md` — and fill in
+the **Project-Specific Notes** section at the bottom:
 
 ```markdown
 ### Stack
@@ -275,15 +369,20 @@ the AI doesn't have to ask is 200–600 tokens saved per turn.
 
 ### Three layers
 
-**1. `CLAUDE.md`** — Installed with `--tool claude` or `all`; auto-loaded by
-Claude Code and holds concise behavior plus project context.
+**1. An always-on adapter** — one of `AGENTS.md`, `CLAUDE.md`, or
+`.cursor/rules/{core,agent-efficiency}.mdc`. Holds the behavioral rules plus
+your project context, and is loaded on every request. Pick one; installing
+several puts the same rules in context two or three times.
 
-**2. `.cursor/rules/*.mdc`** — Installed with `--tool cursor` or `all`.
-Scoped rules fire only for matching files. `.cursorrules` is a legacy adapter,
-installed separately to avoid duplicate always-on context in Cursor.
+**2. Scoped rules** — `.cursor/rules/*.mdc` (Cursor, `globs:`) and
+`.claude/rules/*.md` (Claude Code, `paths:`). Both are generated from the same
+source and load only when a matching file is in context, so a Go service never
+carries Vue rules. `.cursorrules` is a legacy adapter with no scoping, installed
+separately to avoid duplicate always-on context in Cursor.
 
 **3. `PROMPT_TEMPLATES.md`** — The human side. Copy the relevant template
-before each prompt to eliminate padding and produce tighter outputs.
+before each prompt to cut padding and get a tighter answer back. It also holds
+the levers only you can pull: model tier, effort, caching, iteration caps.
 
 ### Always-active core rules
 
@@ -299,7 +398,8 @@ before each prompt to eliminate padding and produce tighter outputs.
 
 ## Adding your own language rules
 
-Duplicate any `.mdc` file and adjust the glob:
+Duplicate any `.mdc` file and adjust the glob. Cursor only reads `.mdc` files
+in `.cursor/rules/` — a plain `.md` there is ignored (except `AGENTS.md`):
 
 ```markdown
 ---
@@ -317,6 +417,15 @@ alwaysApply: false
 
 Drop it in `.cursor/rules/`. Done — Cursor picks it up on the next prompt.
 
+For the Claude Code copy, run the generator instead of hand-writing a second
+file — it rewrites `globs:` to Claude Code's `paths:` and keeps the rule text
+identical:
+
+```bash
+python tools/gen-claude-rules.py          # write .claude/rules/*.md
+python tools/gen-claude-rules.py --check  # fail if they are stale
+```
+
 If you write rules for a stack that's not yet covered, please consider
 [contributing them back](CONTRIBUTING.md).
 
@@ -324,15 +433,24 @@ If you write rules for a stack that's not yet covered, please consider
 
 ## Compatibility
 
-| Tool                  | Support                                                              |
-| --------------------- | -------------------------------------------------------------------- |
-| **Cursor**            | ✅ `.cursor/rules/*.mdc` (`.cursorrules` only as legacy fallback)    |
-| **Claude Code**       | ✅ `CLAUDE.md` (auto-loaded)                                         |
-| **Windsurf**          | ✅ Reads `.cursorrules`                                              |
-| **Cline / Roo**       | ✅ Reads `.cursorrules` and `CLAUDE.md` as context                   |
-| **GitHub Copilot**    | Partial — `CLAUDE.md` works as a manual reference; ignores `.cursorrules` |
-| **Aider**             | ✅ Pass `CLAUDE.md` via `--read CLAUDE.md`                           |
-| **Continue.dev**      | ✅ Add files via `customRules` config                                |
+`AGENTS.md` is the file most agents now read. Use `--tool agents` unless your
+client has something better.
+
+| Tool                     | Install with   | Notes                                                                 |
+| ------------------------ | -------------- | --------------------------------------------------------------------- |
+| **Cursor**               | `cursor`       | `.cursor/rules/*.mdc` is the canonical format and the only one with glob scoping. Cursor also reads a root `AGENTS.md`; `.cursorrules` still works as a legacy fallback. |
+| **Claude Code**          | `claude`       | `CLAUDE.md` auto-loads; `.claude/rules/*.md` with `paths:` load on matching files. Claude Code does **not** read `AGENTS.md` — bridge it with a `@AGENTS.md` line in `CLAUDE.md`. |
+| **OpenAI Codex**         | `agents`       | Native `AGENTS.md`.                                                    |
+| **GitHub Copilot**       | `agents`       | The coding agent reads `AGENTS.md`; the IDE extension also reads `.github/copilot-instructions.md`. |
+| **Windsurf**             | `agents`       | Native `AGENTS.md`. Workspace rules moved to `.devin/rules/` after the Cognition acquisition; `.windsurf/rules/` and `.windsurfrules` are still read. |
+| **Zed / Amp / Jules / Junie / Factory** | `agents` | Native `AGENTS.md`.                                        |
+| **Gemini CLI**           | `agents`       | Native `AGENTS.md`.                                                    |
+| **Aider**                | `agents`       | Native `AGENTS.md`; or pass any adapter with `--read`.                 |
+| **Cline / Roo**          | `agents`       | Safest path is a `.clinerules/` directory — copy `AGENTS.md` in as `.clinerules/lean.md`. Check current Cline docs for `AGENTS.md` support. |
+| **Continue.dev**         | `agents`       | Add the file via `customRules` config.                                 |
+
+Client behavior changes often — if a row looks wrong, check that tool's current
+docs and please [open a PR](CONTRIBUTING.md).
 
 ---
 
@@ -348,10 +466,21 @@ recaps of what you already know, and the model rewriting your whole file when
 you asked it to fix a typo. You'll keep: the actual code and answers.
 
 **Q: Does this work outside Cursor?**
-Yes — `CLAUDE.md` is supported by Claude Code natively, Windsurf reads
-`.cursorrules`, and most other AI IDEs accept project-level rule files. The
-`.mdc` glob format is Cursor-specific, but the rule *content* is just
-markdown — you can paste it into any system prompt.
+Yes. `AGENTS.md` is read natively by Codex, Copilot, Windsurf, Zed, Aider,
+Gemini CLI and ~25 other agents; Claude Code reads `CLAUDE.md` and
+`.claude/rules/`. The `.mdc` glob format is Cursor-specific, but the rule
+*content* is just markdown — you can paste it into any system prompt.
+
+**Q: `AGENTS.md` or `CLAUDE.md`? Do I need both?**
+Pick one. If your repo already has an `AGENTS.md` and you also use Claude Code,
+don't duplicate it — add a `CLAUDE.md` containing `@AGENTS.md` plus any
+Claude-specific lines. Claude Code expands the import at session start.
+
+**Q: Which model should I use to keep costs down?**
+See [Model routing](#model-routing--the-other-half-of-the-bill). Short version:
+drop the reasoning/effort setting one notch before dropping to a weaker model,
+and don't run top-tier models on typo fixes — the price spread across current
+models is about 20×.
 
 **Q: Will rules conflict with my organization's coding standards?**
 The rules in this repo are about *AI behavior* (don't ramble, don't rewrite

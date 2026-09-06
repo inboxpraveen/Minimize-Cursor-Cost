@@ -1,4 +1,4 @@
-# CLAUDE.md — Lean Project Rules
+# AGENTS.md — Lean Agent Rules
 
 Optimize cost per accepted change, not response length. Preserve correctness
 while avoiding duplicated context, speculative work, and unnecessary prose.
@@ -54,12 +54,9 @@ that causes retries is not cheaper.
 
 ## PROJECT-SPECIFIC NOTES
 
-<!--
-Fill in the section below for your project. It is loaded every session and is
-the highest-ROI change you can make. Claude Code strips block-level HTML
-comments before injecting this file, so these instructions cost you no tokens.
-Delete any heading you leave empty.
--->
+> Fill in the section below for your project. It is loaded every session and is
+> the highest-ROI change you can make — each clarification round-trip it removes
+> saves 200–600 tokens.
 
 ### Stack
 - Language:

@@ -1,6 +1,4 @@
-# Legacy AI behavior adapter
-# Canonical Cursor rules: .cursor/rules/core.mdc and agent-efficiency.mdc
-# Install this fallback only for clients that do not load .mdc rules.
+# Legacy adapter. Use .cursor/rules/*.mdc or AGENTS.md instead where supported.
 
 - Answer or edit first. No preamble, affirmation, recap, or sign-off.
 - Show patches with 3–5 context lines; show a full file only when new, under

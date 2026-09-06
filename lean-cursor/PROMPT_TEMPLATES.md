@@ -253,11 +253,32 @@ Do not resend terminal history, generated output, or unchanged files.
 Set a personal rule: max 3 back-and-forths per task. If you're past 3, the
 prompt was too vague. Restart with a tighter spec.
 
-### 4. Choose the right model tier
-- One-line edits, format-only changes → fast/cheap model.
-- Multi-file refactor → mid-tier reasoning model.
-- Architecture, novel debugging → top-tier reasoning model.
-- Don't burn the top tier on a typo.
+### 4. Route by model *and* reasoning effort
+In agent mode this saves more than any prose you trim. Two knobs, in order:
+
+**Effort first.** Most models now have a reasoning/effort setting (`low` → `max`
+on Claude, similar on GPT and Gemini — look in your client's model settings).
+Dropping one notch on a good model usually beats switching to a weaker one, and
+low effort on a current model often beats high effort on last year's. It also
+means fewer tool calls, which is the real cost in agent mode.
+
+**Then tier.** Rough mapping:
+
+| Task                                        | Tier                                  |
+| ------------------------------------------- | ------------------------------------- |
+| One-line edit, rename, format-only          | Fast/cheap model, low effort          |
+| Bounded feature in a known file             | Mid-tier, low–medium effort           |
+| Multi-file refactor                         | Mid-tier, medium–high effort          |
+| Architecture, novel debugging, tricky race  | Top tier, high+ effort                |
+
+A cheap model that needs a retry isn't cheap. Count cost per *accepted* change,
+not per request.
+
+**On Cursor**, the pool matters most. Cursor's own models (Composer 2.5, Grok)
+come with a generous allowance; Claude, GPT and Gemini bill against a separate
+pool at API rates, where one long agent session can eat dollars. Use the
+first-party pool for well-specified work and save the other for tasks that
+actually need it.
 
 ### 5. Choose the cheapest capable mode
 - Read-only answer or explanation → Ask.
@@ -279,13 +300,19 @@ Open-ended questions invite essays. Ask "yes or no?", "option A or B?", or
 "in one sentence, why?".
 
 ### 8. Use prompt caching where supported
-Tools like Claude / Cursor cache stable prefixes. Keep `CLAUDE.md` + rules
-stable; put the volatile task at the end of the message. Re-edit your rule
-files only when actually improving them.
+Cached input costs 2–10× less than fresh input, depending on the provider. The
+catch: caching matches on the prefix, so one changed byte invalidates everything
+after it. Order is tools → system → messages, so keep the stable part first.
+
+- Leave `CLAUDE.md` / `AGENTS.md` / rule files alone mid-task. Edit them when
+  you're improving them, not while you're working.
+- Put the task at the *end* of the message, never the top.
+- Avoid switching models mid-task — caches are per-model, so a swap starts cold.
+- Install only the rule files your stack uses. The rest just pad the prefix.
 
 ---
 
-## 🔢 ROUGH TOKEN COSTS (GPT-4 / Claude / Gemini scale)
+## 🔢 ROUGH TOKEN COSTS (any current frontier model)
 
 | Content                            | ~Tokens   |
 |------------------------------------|-----------|

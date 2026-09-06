@@ -1,7 +1,22 @@
 ---
-description: Rules for test files — keep tests lean and pattern-matched
-globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.test.js", "**/*.test.jsx", "**/*.spec.ts", "**/*.spec.tsx", "**/*.spec.js", "**/*.spec.jsx", "**/test_*.py", "**/*_test.py", "**/*_test.go", "**/*Test.java", "**/*Test.kt", "**/*Tests.cs", "**/*_spec.rb", "**/*Test.php", "**/__tests__/**"]
-alwaysApply: false
+paths:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.test.js"
+  - "**/*.test.jsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/*.spec.js"
+  - "**/*.spec.jsx"
+  - "**/test_*.py"
+  - "**/*_test.py"
+  - "**/*_test.go"
+  - "**/*Test.java"
+  - "**/*Test.kt"
+  - "**/*Tests.cs"
+  - "**/*_spec.rb"
+  - "**/*Test.php"
+  - "**/__tests__/**"
 ---
 
 # Test File Rules

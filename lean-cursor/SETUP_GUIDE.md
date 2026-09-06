@@ -1,6 +1,10 @@
 # Setup Guide — Minimize-Cursor-Cost
 
-This guide gets you to maximum savings (60%+) in under 10 minutes.
+This guide gets the rules installed and tuned in under 10 minutes. For what the
+savings actually measure, see [Expected token savings](#expected-token-savings)
+below — the published figures are historical and the current rules are being
+re-measured against the
+[cost-per-accepted-change benchmark](../benchmarks/README.md).
 
 ---
 
@@ -8,7 +12,9 @@ This guide gets you to maximum savings (60%+) in under 10 minutes.
 
 | File                              | Purpose                                                | Cost lever                       |
 | --------------------------------- | ------------------------------------------------------ | -------------------------------- |
+| `AGENTS.md`                       | Cross-tool standard — Cursor, Codex, Copilot, Windsurf, Zed, Aider… | Cuts prose, enforces diffs |
 | `CLAUDE.md`                       | Auto-loaded by Claude Code on session start            | Cuts prose, enforces diffs       |
+| `.claude/rules/*.md`              | Claude Code path-scoped rules (`paths:` frontmatter)   | Scoped rules load only on match  |
 | `.cursorrules`                    | Cursor — legacy fallback rules                         | Core behavior                    |
 | `.cursor/rules/core.mdc`          | **Always-active** response discipline                  | Cuts response padding            |
 | `.cursor/rules/agent-efficiency.mdc` | **Always-active** tool-call discipline              | Cuts agent-mode tool waste       |
@@ -56,38 +62,65 @@ The default installs Cursor's `core.mdc`, `agent-efficiency.mdc`, and
 
 ```bash
 bash install.sh --tool cursor --rules python,tests --with-index-ignore
-bash install.sh --tool claude
+bash install.sh --tool claude --rules python,tests
+bash install.sh --tool agents
 bash install.sh --tool legacy
 ```
 
 ```powershell
 .\install.ps1 -Tool cursor -Rules 'python,tests' -WithIndexIgnore
-.\install.ps1 -Tool claude
+.\install.ps1 -Tool claude -Rules 'python,tests'
+.\install.ps1 -Tool agents
 .\install.ps1 -Tool legacy
 ```
 
-Use `--rules all` / `-Rules all` only when you want every scoped rule. Use
-`--tool all` / `-Tool all` only for projects intentionally shared across all
-supported clients; otherwise it adds duplicate behavioral context.
+`--rules` applies to both `cursor` (installs `.mdc`) and `claude` (installs the
+matching `.claude/rules/*.md`). The per-stack lists further down use the same
+rule names for either client.
+
+Use `--rules all` / `-Rules all` only when you want every scoped rule — each one
+you don't need is context you pay for on every cache miss. Use `--tool all` /
+`-Tool all` only for projects intentionally shared across all supported clients;
+otherwise it adds duplicate behavioral context.
 
 ### Manual
 
+Pick **one** always-on adapter, then add only the scoped rules your stack uses.
+
+Cursor:
+
 ```
 your-project/
-├── CLAUDE.md                        ← project root
-├── .cursorrules                     ← project root
 ├── .cursor/
 │   └── rules/
 │       ├── core.mdc                 ← always active
 │       ├── agent-efficiency.mdc     ← always active
 │       ├── python.mdc               ← scoped to *.py
-│       ├── typescript.mdc           ← scoped to *.ts, *.tsx, *.js, *.jsx
-│       ├── …                        ← (drop any others you want)
-│       └── tests.mdc
+│       └── tests.mdc                ← (drop any others you want)
 └── PROMPT_TEMPLATES.md              ← keep anywhere accessible
 ```
 
-You don't need every `.mdc` file. Install only matching languages/frameworks;
+Claude Code:
+
+```
+your-project/
+├── CLAUDE.md                        ← project root, always loaded
+├── .claude/
+│   └── rules/
+│       ├── python.md                ← loads when Claude reads a *.py file
+│       └── tests.md
+└── PROMPT_TEMPLATES.md
+```
+
+Any other agent:
+
+```
+your-project/
+├── AGENTS.md                        ← project root
+└── PROMPT_TEMPLATES.md
+```
+
+You don't need every rule file. Install only matching languages/frameworks;
 fewer applicable rules means less context and fewer conflicting instructions.
 
 ### Context exclusions
@@ -102,8 +135,11 @@ terminal commands or MCP tools.
 
 ## Per-stack quickstart
 
-Pick the section that matches your project. Drop only those rules + the
-two always-active ones (`core.mdc`, `agent-efficiency.mdc`).
+Pick the section that matches your project and install only those rules, plus
+one always-on adapter: for Cursor that's `core.mdc` + `agent-efficiency.mdc`,
+for Claude Code it's `CLAUDE.md`, for anything else it's `AGENTS.md`. The rule
+names below are identical across clients — `--rules python,tests` installs
+`python.mdc`/`tests.mdc` for Cursor and `python.md`/`tests.md` for Claude Code.
 
 ### Python backend (FastAPI / Django / Flask)
 - `core.mdc`, `agent-efficiency.mdc`
@@ -182,9 +218,10 @@ two always-active ones (`core.mdc`, `agent-efficiency.mdc`).
 
 ---
 
-## Customize CLAUDE.md (the highest-ROI step)
+## Customize your adapter (the highest-ROI step)
 
-Open `CLAUDE.md` and fill in **Project-Specific Notes** at the bottom:
+Open whichever adapter you installed — `CLAUDE.md` or `AGENTS.md` — and fill in
+**Project-Specific Notes** at the bottom:
 
 ```markdown
 ### Stack
@@ -223,7 +260,13 @@ Each round-trip you eliminate saves 200–600 tokens.
 
 ## Expected token savings
 
-These are measured estimates over a 20-task sample on real projects.
+⚠️ **These numbers are historical.** They come from the old 20-task sample run
+against the pre-adaptive rules, and they count response and tool-result tokens
+only — no retries, no correction turns, no verification. They do **not** measure
+the current rules. New figures have to pass the
+[cost-per-accepted-change benchmark](../benchmarks/README.md), which keeps failed
+runs in the data and requires acceptance rate to hold. Read the table as a map of
+where the waste sits, not as what you'll get.
 
 | Change                            | Before  | After  | Reduction |
 | --------------------------------- | ------- | ------ | --------- |
@@ -235,15 +278,19 @@ These are measured estimates over a 20-task sample on real projects.
 | Agent: locate + edit one function | ~7,000  | ~2,200 | 69%       |
 | Agent: multi-file refactor        | ~25,000 | ~9,500 | 62%       |
 
-**Combined typical reduction:** 60–70%.
+**Historical combined reduction:** 60–70%.
 
-### How to hit the high end
+### How to get the most out of it
 
 1. **Fill in `CLAUDE.md` → Project-Specific Notes thoroughly.** This eats most clarification rounds.
 2. **Use `PROMPT_TEMPLATES.md` instead of free-form prompts.** Cuts your prompt size by ~half.
 3. **In agent mode, give an exact starting file or symbol.** "Look at `src/api/users.py:get_user_by_email`" beats "look at the user code".
 4. **Don't paste whole files.** Paste the function. Refer to the file by path on later turns.
-5. **Use the right model tier.** Don't burn a top-tier model on a typo fix.
+5. **Pick the model and effort deliberately.** Drop the reasoning/effort setting
+   one notch before dropping to a weaker model — it cuts tool calls, which is
+   most of the bill. Don't burn a top-tier model on a typo; prices across current
+   models span roughly 20×. On Cursor, check which credit pool you're drawing
+   from. Details in `PROMPT_TEMPLATES.md` § Advanced cost levers.
 6. **Disable "send full open file as context" in your IDE if available.**
 7. **Cap your iteration loops.** If you're past 3 back-and-forths, restart with a tighter prompt.
 
@@ -258,7 +305,23 @@ These are measured estimates over a 20-task sample on real projects.
 
 ### "Claude Code isn't loading CLAUDE.md"
 - The file must be in the directory you launched `claude` from (or any ancestor).
-- Run `claude /memory` to see what files were loaded.
+- Run `/context` inside a session and check the **Memory files** list — that
+  shows what actually loaded. `/memory` lists and opens the files for editing.
+- Claude Code does **not** read `AGENTS.md`. If that's your canonical file, add
+  a `CLAUDE.md` whose first line is `@AGENTS.md`, which imports it at session
+  start. (A symlink also works, but needs Administrator or Developer Mode on
+  Windows.)
+- Keep `CLAUDE.md` under ~200 lines. Longer files consume more context and
+  adherence drops. `/doctor` proposes trims for a checked-in `CLAUDE.md`.
+
+### "My `.claude/rules/` files never fire"
+- Each file needs `paths:` frontmatter with glob patterns. A rule with no
+  `paths` field loads unconditionally — which is usually not what you want for a
+  language rule.
+- Path-scoped rules trigger when Claude *reads* a matching file, not on every
+  tool call. Point Claude at a matching file and re-check `/context`.
+- Don't copy `core`/`agent-efficiency` into `.claude/rules/` — `CLAUDE.md`
+  already carries that content, and duplicating it doubles your always-on cost.
 
 ### "The AI still writes essays"
 - Check that `core.mdc` is present and has `alwaysApply: true` in its frontmatter.
@@ -276,7 +339,15 @@ These are measured estimates over a 20-task sample on real projects.
 
 ## Maintenance
 
-- **Update `CLAUDE.md` as your project evolves** — especially the "Known shortcuts" section.
-- Add a new `.mdc` rule when you adopt a new language or domain (e.g., `terraform.mdc`, `protobuf.mdc`).
+- **Update your adapter as your project evolves** — especially the "Known
+  shortcuts" section.
+- Add a new `.mdc` rule when you adopt a new language or domain (e.g.,
+  `terraform.mdc`, `protobuf.mdc`). If you also use Claude Code, regenerate the
+  scoped copies with `python tools/gen-claude-rules.py` rather than maintaining
+  two files by hand.
+- Claude Code's auto memory records corrections you repeat. If it keeps saving
+  the same correction, that correction belongs in `CLAUDE.md` instead.
 - If the AI keeps making the same mistake, add a "Never" rule to the relevant `.mdc` file. That single line will save tokens for every future prompt.
-- Don't churn rule files — every edit invalidates prompt caches in providers that support them.
+- Don't churn rule files. Caching matches on the prefix, so one changed byte
+  means you pay full input price on the next request. Batch your rule edits and
+  keep them out of the middle of a task.
